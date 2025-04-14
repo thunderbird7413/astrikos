@@ -34,9 +34,9 @@ const Model = ({ url, onModelClick, onPOIClick, selectedPOI, pois }) => {
       <primitive object={scene} />
       {pois.map((poi) => (
         <POIMarker
-          key={poi.id}
+          key={poi._id}
           position={[poi.position.x, poi.position.y, poi.position.z]}
-          isSelected={selectedPOI?.id === poi.id}
+          isSelected={selectedPOI?._id === poi._id}
           userData={{ poi, isPOI: true }}
           onClick={() => onPOIClick(poi)}
         />

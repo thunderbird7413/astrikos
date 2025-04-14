@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Sidebar from './components/Editor/Sidebar';
-import EditorScene from './components/Editor/EditorScene';
-import Toolbar from './components/Editor/Toolbar';
+import Sidebar from './components/3d/Editor/Sidebar';
+import EditorScene from './components/3d/Editor/EditorScene';
+import Toolbar from './components/3d/Editor/Toolbar';
 
 export default function EditorPage() {
   // State management
@@ -23,15 +23,15 @@ export default function EditorPage() {
           fetch('/api/models'),
           fetch('/api/categories')
         ]);
-        
+
         const [modelsData, categoriesData] = await Promise.all([
           modelsRes.json(),
           categoriesRes.json()
         ]);
-        
+
         setModels(modelsData);
         setCategories(categoriesData);
-        
+
         // Load last used model if available
         const lastModelId = localStorage.getItem('lastModelId');
         if (lastModelId) {
@@ -61,7 +61,7 @@ export default function EditorPage() {
         const response = await fetch(`/api/pois?modelId=${currentModel._id}`);
         const data = await response.json();
         setPois(data);
-        
+
         // Store last used model
         localStorage.setItem('lastModelId', currentModel._id);
       } catch (error) {
@@ -78,12 +78,12 @@ export default function EditorPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('data', JSON.stringify({ name, category, tags }));
-  
+
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
-  
+
       const newModel = await response.json();
       setModels([...models, newModel]);
       setCurrentModel(newModel);
@@ -93,7 +93,7 @@ export default function EditorPage() {
       throw error;
     }
   };
-  
+
 
   const handleSelectModel = (model) => {
     setCurrentModel(model);
@@ -136,6 +136,7 @@ export default function EditorPage() {
       });
       const updatedPOI = await response.json();
       setPois(pois.map((poi) => (poi._id === updatedPOI._id ? updatedPOI : poi)));
+      alert("POI updated Successfully");
     } catch (error) {
       console.error('Failed to update POI:', error);
       throw error;
@@ -207,14 +208,14 @@ export default function EditorPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <Toolbar 
-        onSave={handleSaveScene} 
+      <Toolbar
+        onSave={handleSaveScene}
         pois={pois}
         transformMode={transformMode}
         onTransformModeChange={setTransformMode}
         currentModel={currentModel}
       />
-      
+
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           models={models}
@@ -228,7 +229,7 @@ export default function EditorPage() {
           currentModel={currentModel}
           isLoading={isLoading}
         />
-        
+
         {currentModel ? (
           <EditorScene
             modelUrl={currentModel.path}

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import SaveModal from '@/src/app/components/UI/SaveModel';
+import SaveModal from '../UI/SaveModel';
 
 export default function Toolbar({ currentModel, pois }) {
   const [showSaveModal, setShowSaveModal] = useState(false);

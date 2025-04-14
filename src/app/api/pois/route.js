@@ -25,8 +25,8 @@ export async function POST(request) {
 export async function PUT(request) {
   await dbConnect();
   const body = await request.json();
-  const { id, ...updateData } = body;
-  const updatedPOI = await POI.findByIdAndUpdate(id, updateData, { new: true });
+  const { _id, ...updateData } = body;
+  const updatedPOI = await POI.findByIdAndUpdate(_id, updateData, { new: true });
   return NextResponse.json(updatedPOI);
 }
 

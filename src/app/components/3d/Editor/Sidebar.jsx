@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FiUpload, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
-import Modal from '@/src/app/components/UI/Modal';
-import Button from '@/src/app/components/UI/Button';
+import Modal from '../UI/Modal';
+import Button from '../UI/Button';
 
 export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) {
     const [models, setModels] = useState([]);
