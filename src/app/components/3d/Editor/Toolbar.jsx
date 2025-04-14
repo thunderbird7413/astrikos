@@ -36,7 +36,7 @@ export default function Toolbar({ currentModel, pois }) {
         <SaveModal
           currentName={`${currentModel?.name}(v${(currentModel?.version || 0) + 1})`}
           onSave={handleSave}
-          onCancel={() => setShowSaveModal(false)}
+          onCancel={() => setShowSaveModal(false)}  
         />
       )}
     </>
