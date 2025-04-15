@@ -11,6 +11,7 @@ export async function GET() {
 export async function POST(request) {
   await dbConnect();
   const body = await request.json();
+  console.log("catgeoryBody", body);
   const category = await Category.create(body);
   return NextResponse.json(category, { status: 201 });
 }
