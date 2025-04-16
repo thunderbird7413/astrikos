@@ -3,8 +3,8 @@ import { useState, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import Button from '../../UI/Button';
+import { TransformControls as RawTransformControls } from 'three/examples/jsm/controls/TransformControls';
+import Button from '../UI/Button';
 
 const ModelEditor = () => {
     const canvasRef = useRef(null);
@@ -15,22 +15,24 @@ const ModelEditor = () => {
     const transformControlsRef = useRef(null);
     const [selectedObject, setSelectedObject] = useState(null);
     const [shapes, setShapes] = useState([]);
+    const gridHelperRef = useRef(null);
+    const [transformMode, setTransformMode] = useState('translate');
 
     useEffect(() => {
         if (!canvasRef.current) return;
 
-        // Initialize Three.js scene
+        // Initialize scene
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf0f0f0);
         sceneRef.current = scene;
 
-        // Setup camera
+        // Camera setup
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(5, 5, 5);
         camera.lookAt(0, 0, 0);
         cameraRef.current = camera;
 
-        // Setup renderer
+        // Renderer setup
         const renderer = new THREE.WebGLRenderer({ 
             canvas: canvasRef.current,
             antialias: true,
@@ -40,35 +42,38 @@ const ModelEditor = () => {
         renderer.setPixelRatio(window.devicePixelRatio);
         rendererRef.current = renderer;
 
-        // Setup orbit controls
+        // Orbit controls
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controlsRef.current = controls;
 
-        // Setup transform controls
-        const transformControls = new TransformControls(camera, renderer.domElement);
+        // Transform controls
+        const transformControls = new RawTransformControls(camera, renderer.domElement);
+        transformControls.setSize(0.8); // Make controls more visible
         transformControls.addEventListener('dragging-changed', (event) => {
             controls.enabled = !event.value;
         });
+        transformControls.addEventListener('change', () => {
+            renderer.render(scene, camera);
+        });
+        scene.add(transformControls);
         transformControlsRef.current = transformControls;
 
-        // Create a container for the transform controls
-        const transformControlsContainer = new THREE.Object3D();
-        transformControlsContainer.add(transformControls);
-        scene.add(transformControlsContainer);
-
-        // Add lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
-
+        // Lights
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
         directionalLight.position.set(5, 5, 5);
         scene.add(directionalLight);
 
-        // Add grid helper
-        const gridHelper = new THREE.GridHelper(10, 10);
-        scene.add(gridHelper);
+        // Ground plane
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(100, 100),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+        gridHelperRef.current = ground;
 
         // Animation loop
         const animate = () => {
@@ -78,7 +83,7 @@ const ModelEditor = () => {
         };
         animate();
 
-        // Handle window resize
+        // Event listeners
         const handleResize = () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -86,97 +91,79 @@ const ModelEditor = () => {
         };
         window.addEventListener('resize', handleResize);
 
+        const handleKeyDown = (event) => {
+            if (event.key === 'Delete' && selectedObject) {
+                scene.remove(selectedObject);
+                setShapes(shapes.filter(shape => shape !== selectedObject));
+                setSelectedObject(null);
+                transformControls.detach();
+            }
+            switch (event.key.toLowerCase()) {
+                case 't': setTransformMode('translate'); break;
+                case 'r': setTransformMode('rotate'); break;
+                case 's': setTransformMode('scale'); break;
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+
         return () => {
             window.removeEventListener('resize', handleResize);
-            scene.traverse((object) => {
-                if (object.geometry) {
-                    object.geometry.dispose();
-                }
-                if (object.material) {
-                    if (Array.isArray(object.material)) {
-                        object.material.forEach(material => material.dispose());
-                    } else {
-                        object.material.dispose();
-                    }
-                }
-            });
+            window.removeEventListener('keydown', handleKeyDown);
             renderer.dispose();
         };
     }, []);
 
-    const addShape = (type) => {
-        if (!sceneRef.current) return;
-
-        let geometry, material;
-        switch (type) {
-            case 'cube':
-                geometry = new THREE.BoxGeometry(1, 1, 1);
-                break;
-            case 'sphere':
-                geometry = new THREE.SphereGeometry(0.5, 32, 32);
-                break;
-            case 'cylinder':
-                geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-                break;
-            default:
-                return;
+    useEffect(() => {
+        if (transformControlsRef.current) {
+            transformControlsRef.current.setMode(transformMode);
         }
+    }, [transformMode]);
 
-        material = new THREE.MeshPhongMaterial({ 
+    const addShape = (type) => {
+        const geometry = {
+            cube: new THREE.BoxGeometry(1, 1, 1),
+            sphere: new THREE.SphereGeometry(0.5, 32, 32),
+            cylinder: new THREE.CylinderGeometry(0.5, 0.5, 1, 32)
+        }[type];
+
+        const material = new THREE.MeshPhongMaterial({
             color: new THREE.Color(Math.random(), Math.random(), Math.random()),
             transparent: true,
             opacity: 0.8
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(0, 0, 0);
+        mesh.position.set(shapes.length * 2, 0.5, 0);
+        
         sceneRef.current.add(mesh);
-        setShapes([...shapes, mesh]);
-
-        // Select the new shape
+        setShapes(prev => [...prev, mesh]);
         setSelectedObject(mesh);
-        if (transformControlsRef.current) {
-            transformControlsRef.current.attach(mesh);
-        }
+        transformControlsRef.current.attach(mesh);
     };
 
-    const handleObjectClick = (event) => {
-        if (!sceneRef.current || !cameraRef.current || !transformControlsRef.current) return;
-
+    const handleCanvasClick = (event) => {
         const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        const mouse = new THREE.Vector2(
+            (event.clientX / window.innerWidth) * 2 - 1,
+            -(event.clientY / window.innerHeight) * 2 + 1
+        );
         
         raycaster.setFromCamera(mouse, cameraRef.current);
-        
-        const intersects = raycaster.intersectObjects(sceneRef.current.children);
-        
-        if (intersects.length > 0) {
+        const intersects = raycaster.intersectObjects(sceneRef.current.children, true);
+
+        if (intersects.length > 0 && !intersects[0].object.isTransformControls) {
             const selected = intersects[0].object;
-            if (selected !== selectedObject) {
-                setSelectedObject(selected);
-                transformControlsRef.current.attach(selected);
-            }
-        } else {
-            setSelectedObject(null);
-            transformControlsRef.current.detach();
+            setSelectedObject(selected);
+            transformControlsRef.current.attach(selected);
         }
     };
 
     const exportModel = () => {
-        if (!sceneRef.current) return;
-
-        const exporter = new GLTFExporter();
-        exporter.parse(sceneRef.current, (gltf) => {
-            const blob = new Blob([gltf], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
+        new GLTFExporter().parse(sceneRef.current, (gltf) => {
             const link = document.createElement('a');
-            link.href = url;
+            link.href = URL.createObjectURL(new Blob([JSON.stringify(gltf)], { type: 'application/octet-stream' }));
             link.download = 'model.gltf';
             link.click();
-            URL.revokeObjectURL(url);
         });
     };
 
@@ -186,15 +173,31 @@ const ModelEditor = () => {
                 <Button onClick={() => addShape('cube')}>Add Cube</Button>
                 <Button onClick={() => addShape('sphere')}>Add Sphere</Button>
                 <Button onClick={() => addShape('cylinder')}>Add Cylinder</Button>
+                
+                <Button onClick={() => setTransformMode('translate')} variant={transformMode === 'translate' ? 'primary' : 'secondary'}>
+                    Move (T)
+                </Button>
+                <Button onClick={() => setTransformMode('rotate')} variant={transformMode === 'rotate' ? 'primary' : 'secondary'}>
+                    Rotate (R)
+                </Button>
+                <Button onClick={() => setTransformMode('scale')} variant={transformMode === 'scale' ? 'primary' : 'secondary'}>
+                    Scale (S)
+                </Button>
+                
                 <Button onClick={exportModel} variant="secondary">Export Model</Button>
             </div>
+            
+            <div className="p-2 text-sm text-gray-600">
+                {selectedObject ? `Selected: ${selectedObject.type}` : "Click to select object"}
+            </div>
+
             <canvas 
-                ref={canvasRef} 
+                ref={canvasRef}
                 className="flex-1"
-                onClick={handleObjectClick}
+                onClick={handleCanvasClick}
             />
         </div>
     );
 };
 
-export default ModelEditor; 
+export default ModelEditor;
