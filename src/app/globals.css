@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+.blur-edge-mask {
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
+  mask-image: radial-gradient(ellipse at center, rgb(0, 0, 0) 40%, rgba(0,0,0,0) 60%);
+  -webkit-mask-composite: destination-in;
+  mask-composite: intersect;
+  backdrop-filter: blur(200px);
+}
+
