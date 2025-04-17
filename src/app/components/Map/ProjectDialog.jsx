@@ -1,20 +1,20 @@
-import React from "react";
-import {
-  FaDatabase,
-  FaGlobe,
-  FaFingerprint,
-  FaTag,
-  FaSave,
-  FaTimes,
-} from "react-icons/fa";
+import React, { useState } from "react";
+import { FaFolder, FaSave, FaTimes } from "react-icons/fa";
 
-export default function SourceDialog({
-  isOpen,
-  onClose,
-  newSource,
-  setNewSource,
-  onAddSource,
-}) {
+export default function ProjectDialog({ isOpen, onClose, onCreateProject }) {
+  const [newProject, setNewProject] = useState({
+    name: "",
+    description: "",
+  });
+
+  const handleCreate = () => {
+    if (newProject.name.trim()) {
+      onCreateProject(newProject);
+      onClose();
+      setNewProject({ name: "", description: "" });
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -22,8 +22,8 @@ export default function SourceDialog({
       <div className="bg-gray-900 p-6 rounded-lg w-full max-w-md shadow-xl border border-gray-700">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl text-blue-400 font-bold flex items-center gap-2">
-            <FaDatabase className="text-blue-500" />
-            Add Data Source
+            <FaFolder className="text-blue-500" />
+            Create New Project
           </h2>
           <button
             onClick={onClose}
@@ -35,47 +35,30 @@ export default function SourceDialog({
 
         <div className="mb-5">
           <label className="text-sm font-medium text-neutral-300 mb-1 flex items-center gap-1">
-            <FaFingerprint className="text-blue-400" size={14} />
-            Source ID (unique identifier)
+            Project Name
           </label>
           <input
             type="text"
-            value={newSource.id}
-            onChange={(e) => setNewSource({ ...newSource, id: e.target.value })}
-            className="w-full text-white p-3 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            placeholder="e.g., traffic, weather"
-          />
-        </div>
-
-        <div className="mb-5">
-          <label className="text-sm font-medium text-neutral-300 mb-1 flex items-center gap-1">
-            <FaTag className="text-blue-400" size={14} />
-            Name
-          </label>
-          <input
-            type="text"
-            value={newSource.name}
+            value={newProject.name}
             onChange={(e) =>
-              setNewSource({ ...newSource, name: e.target.value })
+              setNewProject({ ...newProject, name: e.target.value })
             }
             className="w-full text-white p-3 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            placeholder="e.g., Traffic Data, Weather Service"
+            placeholder="e.g., Downtown Traffic Analysis"
           />
         </div>
 
         <div className="mb-6">
           <label className="text-sm font-medium text-neutral-300 mb-1 flex items-center gap-1">
-            <FaGlobe className="text-blue-400" size={14} />
-            API URL
+            Description (optional)
           </label>
-          <input
-            type="text"
-            value={newSource.url}
+          <textarea
+            value={newProject.description}
             onChange={(e) =>
-              setNewSource({ ...newSource, url: e.target.value })
+              setNewProject({ ...newProject, description: e.target.value })
             }
-            className="w-full text-white p-3 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            placeholder="e.g., http://localhost:5000/api/traffic"
+            className="w-full text-white p-3 bg-gray-800 border border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all h-24"
+            placeholder="Add a brief description of the project..."
           />
         </div>
 
@@ -88,12 +71,12 @@ export default function SourceDialog({
             <span>Cancel</span>
           </button>
           <button
-            onClick={onAddSource}
+            onClick={handleCreate}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
-            disabled={!newSource.id || !newSource.name || !newSource.url}
+            disabled={!newProject.name.trim()}
           >
             <FaSave size={14} />
-            <span>Add Source</span>
+            <span>Create Project</span>
           </button>
         </div>
       </div>

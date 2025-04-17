@@ -9,8 +9,24 @@ import MapComponent from "../components/Map/MapComponent";
 import FeaturePanel from "../components/Map/FeaturePanel";
 import { layerStyles, getSourceColor } from "../../utils/MapUtils";
 import { generateGeoJSON, getPointFeatures } from "../../utils/GeoJsonUtils";
+import {
+  FaPlus,
+  FaMapMarkedAlt,
+  FaFolderOpen,
+  FaFolder,
+  FaTrashAlt,
+} from "react-icons/fa";
+import { IoMdArrowBack } from "react-icons/io";
+import ProjectDialog from "../components/Map/ProjectDialog";
 
 export default function Home() {
+  // Project state
+  const [projects, setProjects] = useState([]);
+  const [activeProject, setActiveProject] = useState(null);
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [forceReset, setForceReset] = useState(0);
+
+  // Original state
   const [dataSources, setDataSources] = useState([]);
   const [activeDataSources, setActiveDataSources] = useState({});
   const [realtimeData, setRealtimeData] = useState(null);
@@ -24,8 +40,75 @@ export default function Home() {
 
   const [newSourceDialogOpen, setNewSourceDialogOpen] = useState(false);
   const [newSource, setNewSource] = useState({ id: "", url: "", name: "" });
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false);
 
   const [socket, setSocket] = useState(null);
+
+  // Create a new project
+  const createProject = (projectData) => {
+    if (socket) {
+      socket.emit("create-project", projectData);
+    }
+  };
+
+  // Load a project
+  const loadProject = (projectId) => {
+    if (socket) {
+      // Unsubscribe from all current sources first
+      Object.keys(activeDataSources).forEach((sourceId) => {
+        socket.emit("unsubscribe-source", { sourceId });
+      });
+
+      // Clear all existing data sources and features before loading a new project
+      setActiveDataSources({});
+      setRealtimeData(null);
+      setForceReset((prev) => prev + 1);
+      socket.emit("get-project", { projectId });
+      setProjectMenuOpen(false);
+    }
+  };
+
+  // Delete a project
+  const deleteProject = (projectId) => {
+    if (
+      socket &&
+      window.confirm(
+        "Are you sure you want to delete this project? This action cannot be undone."
+      )
+    ) {
+      if (activeProject && activeProject.id === projectId) {
+        // Unsubscribe from all current sources first
+        Object.keys(activeDataSources).forEach((sourceId) => {
+          socket.emit("unsubscribe-source", { sourceId });
+        });
+      }
+
+      socket.emit("delete-project", { projectId });
+
+      if (activeProject && activeProject.id === projectId) {
+        setActiveProject(null);
+        setActiveDataSources({});
+        setRealtimeData(null);
+        setForceReset((prev) => prev + 1);
+      }
+    }
+  };
+
+  // Update project with current map data
+  const saveProjectState = () => {
+    if (socket && activeProject) {
+      const updatedProject = {
+        ...activeProject,
+        initialViewState: viewState,
+        geojsonData: generateGeoJSON(activeDataSources),
+      };
+
+      socket.emit("update-project", {
+        projectId: activeProject.id,
+        projectData: updatedProject,
+      });
+    }
+  };
 
   const subscribeToSource = (sourceId) => {
     if (socket && !activeDataSources[sourceId]) {
@@ -56,7 +139,13 @@ export default function Home() {
 
   const addNewSource = () => {
     if (socket && newSource.id && newSource.url && newSource.name) {
-      socket.emit("add-source", newSource);
+      // Pass the current project ID if a project is active
+      const sourceData = {
+        ...newSource,
+        projectId: activeProject ? activeProject.id : null,
+      };
+
+      socket.emit("add-source", sourceData);
       setNewSourceDialogOpen(false);
       setNewSource({ id: "", url: "", name: "" });
     }
@@ -113,7 +202,61 @@ export default function Home() {
     });
 
     newSocket.on("available-sources", (sources) => {
-      setDataSources(sources);
+      // Filter sources to only show those for the current project
+      const filteredSources = activeProject
+        ? sources.filter((source) => source.projectId === activeProject.id)
+        : sources.filter((source) => !source.projectId); // show only sources with no project
+
+      setDataSources(filteredSources);
+    });
+
+    newSocket.on("available-projects", (projectsList) => {
+      setProjects(projectsList);
+    });
+
+    newSocket.on("project-data", ({ project, dataSources }) => {
+      // Unsubscribe from all current sources first
+      Object.keys(activeDataSources).forEach((sourceId) => {
+        newSocket.emit("unsubscribe-source", { sourceId });
+      });
+
+      // Clear previous state first
+      setActiveDataSources({});
+      setRealtimeData(null);
+      setForceReset((prev) => prev + 1);
+
+      // Set new project data
+      setActiveProject(project);
+
+      // Set the view state from the project
+      if (project.initialViewState) {
+        setViewState(project.initialViewState);
+      }
+
+      // Update available data sources for this project
+      setDataSources(dataSources);
+    });
+
+    newSocket.on("project-created", (project) => {
+      // Automatically load the newly created project
+      setActiveProject(project);
+    });
+
+    newSocket.on("project-updated", (project) => {
+      if (activeProject && activeProject.id === project.id) {
+        setActiveProject(project);
+      }
+    });
+
+    newSocket.on("project-deleted", ({ id }) => {
+      if (activeProject && activeProject.id === id) {
+        // Clear everything if the active project was deleted
+        setActiveProject(null);
+        setActiveDataSources({});
+        setRealtimeData(null);
+        setDataSources([]);
+        setForceReset((prev) => prev + 1);
+      }
     });
 
     newSocket.on("realtime-data", (response) => {
@@ -125,10 +268,17 @@ export default function Home() {
         return;
       }
 
-      setActiveDataSources((prev) => ({
-        ...prev,
-        [sourceId]: data,
-      }));
+      // Update the active data sources atomically to prevent intermediate renders
+      setActiveDataSources((prev) => {
+        // Only update if the source is different to avoid unnecessary renders
+        if (prev[sourceId] === data) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [sourceId]: data,
+        };
+      });
 
       setRealtimeData(data);
     });
@@ -145,14 +295,40 @@ export default function Home() {
     return () => {
       newSocket.disconnect();
     };
-  }, [disconnectingSource]);
+  }, [disconnectingSource, activeProject]);
 
-  const geojsonData = generateGeoJSON(activeDataSources);
-  const pointFeatures = getPointFeatures(geojsonData);
+  // Auto-save project state when map changes
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      if (activeProject) {
+        saveProjectState();
+      }
+    }, 5000);
+
+    return () => clearTimeout(saveTimeout);
+  }, [viewState, activeDataSources, activeProject]);
+
+  // Use a stable key for the FeaturePanel to avoid unnecessary remounts
+  const featurePanelKey = `feature-panel-${activeProject?.id || "no-project"}`;
+
+  // Generate valid GeoJSON data from current active data sources
+  const geojsonData =
+    Object.keys(activeDataSources).length > 0
+      ? generateGeoJSON(activeDataSources)
+      : { type: "FeatureCollection", features: [] };
+
+  const pointFeatures = geojsonData ? getPointFeatures(geojsonData) : [];
 
   return (
     <main className="h-screen flex flex-col bg-[#030915] text-neutral-200 overflow-hidden">
-      {/* New source dialog */}
+      {/* Project Dialog */}
+      <ProjectDialog
+        isOpen={projectDialogOpen}
+        onClose={() => setProjectDialogOpen(false)}
+        onCreateProject={createProject}
+      />
+
+      {/* Source Dialog */}
       <SourceDialog
         isOpen={newSourceDialogOpen}
         onClose={() => setNewSourceDialogOpen(false)}
@@ -161,21 +337,109 @@ export default function Home() {
         onAddSource={addNewSource}
       />
 
-      <div className="bg-gray-950 p-2 border-b border-gray-700 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-neutral-200">
-          GeoSpatial Data Viewer
-        </h1>
-        <div className="flex space-x-2">
+      {/* Header with navigation and controls */}
+      <div className="bg-gradient-to-r from-gray-900 to-gray-950 p-3 border-b border-gray-700 flex justify-between items-center shadow-md">
+        {/* Left side - Back button */}
+        <Link href="/">
+          <button className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-2 rounded-md transition-colors text-sm flex items-center gap-2 shadow-lg">
+            <IoMdArrowBack size={20} />
+          </button>
+        </Link>
+
+        {/* Right side - Title and controls */}
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-bold text-blue-400 flex items-center gap-2">
+            <FaMapMarkedAlt className="text-blue-300" />
+            GeoSpatial Map Editor
+          </h1>
+
+          {/* Project selector dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setProjectMenuOpen(!projectMenuOpen)}
+              className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm flex items-center gap-2 shadow-md"
+            >
+              <FaFolderOpen size={14} />
+              <span>
+                {activeProject ? activeProject.name : "Select Project"}
+              </span>
+            </button>
+
+            {projectMenuOpen && (
+              <div className="absolute top-full right-0 mt-1 w-64 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50">
+                <div className="p-2 border-b border-gray-700">
+                  <button
+                    onClick={() => {
+                      setProjectDialogOpen(true);
+                      setProjectMenuOpen(false);
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm flex items-center gap-2"
+                  >
+                    <FaPlus size={12} />
+                    <span>New Project</span>
+                  </button>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto p-1">
+                  {projects.length === 0 ? (
+                    <div className="p-3 text-center text-gray-400">
+                      No projects yet
+                    </div>
+                  ) : (
+                    projects.map((project) => (
+                      <div
+                        key={project.id}
+                        className={`flex items-center justify-between p-2 hover:bg-gray-700 rounded-md ${
+                          activeProject && activeProject.id === project.id
+                            ? "bg-gray-700"
+                            : ""
+                        }`}
+                      >
+                        <button
+                          onClick={() => loadProject(project.id)}
+                          className="flex items-center gap-2 text-left flex-1"
+                        >
+                          <FaFolder className="text-blue-400" size={14} />
+                          <span className="text-sm truncate">
+                            {project.name}
+                          </span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteProject(project.id);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-400"
+                          title="Delete project"
+                        >
+                          <FaTrashAlt size={12} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Add data source button */}
           <button
             onClick={() => setNewSourceDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors text-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors text-sm flex items-center gap-2 shadow-lg"
+            disabled={!activeProject}
+            title={
+              !activeProject
+                ? "Select a project first"
+                : "Add data source to project"
+            }
           >
-            Add New Source
+            <FaPlus size={14} />
+            <span>Add Data Source</span>
           </button>
         </div>
       </div>
 
-      {/* Main two-panel layout */}
+      {/* Main layout */}
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Left panel - Data Sources */}
         <SourceList
@@ -185,6 +449,8 @@ export default function Home() {
           subscribeToSource={subscribeToSource}
           unsubscribeFromSource={unsubscribeFromSource}
           deleteSource={deleteSource}
+          setNewSourceDialogOpen={setNewSourceDialogOpen}
+          activeProject={activeProject}
         />
 
         {/* Center panel - Map */}
@@ -198,6 +464,7 @@ export default function Home() {
 
         {/* Right panel - Features */}
         <FeaturePanel
+          key={featurePanelKey}
           activeDataSources={activeDataSources}
           dataSources={dataSources}
           focusOnFeature={focusOnFeature}

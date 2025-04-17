@@ -10,6 +10,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import { getSourceColor } from "../../../utils/MapUtils";
+import { FaEdit, FaDownload, FaUpload, FaTrash } from "react-icons/fa";
 
 export default function MapComponent({
   viewState,
@@ -33,7 +34,6 @@ export default function MapComponent({
 
       if (Array.isArray(geojsonData.features)) {
         validatedData.features = geojsonData.features.filter((feature) => {
-          
           if (!feature || !feature.geometry) return false;
 
           if (feature.geometry.type === "Point") {
@@ -343,24 +343,23 @@ export default function MapComponent({
 
   return (
     <div className="w-3/5 relative">
-      {/* Edit Mode UI Controls - Now centered at top */}
+      {/* Edit Mode UI Controls */}
       <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="flex flex-row items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-md shadow-lg">
+        <div className="flex flex-row items-center gap-1.5 bg-gray-900/70 px-1.5 py-1 rounded-lg shadow-lg border backdrop-blur-sm">
           <button
             onClick={toggleEditMode}
-            className={`px-3 py-1 text-xs rounded cursor-pointer transition-colors ${
-              isEditMode
-                ? "bg-gray-600 text-gray-200"
-                : "bg-gray-600 text-gray-200"
-            }`}
+            className={`px-2 py-1 rounded-md cursor-pointer flex items-center gap-1.5 transition-colors text-xs bg-gray-700 text-gray-100 hover:bg-gray-600`}
+            title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
           >
-            {isEditMode ? "Exit Edit" : "Edit GeoJSON"}
+            <FaEdit size={12} />
+            <span>{isEditMode ? "Exit" : "Edit"}</span>
           </button>
 
           {isEditMode && (
             <>
-              <label className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs text-center cursor-pointer text-white">
-                Upload
+              <label className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded-md cursor-pointer text-white flex items-center gap-1.5 transition-colors text-xs">
+                <FaUpload size={12} />
+                <span>Upload</span>
                 <input
                   type="file"
                   accept=".geojson,application/geo+json"
@@ -371,16 +370,20 @@ export default function MapComponent({
 
               <button
                 onClick={handleDownload}
-                className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs cursor-pointer text-white"
+                className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded-md cursor-pointer text-white flex items-center gap-1.5 transition-colors text-xs"
+                title="Download GeoJSON"
               >
-                Download
+                <FaDownload size={12} />
+                <span>Download</span>
               </button>
 
               <button
                 onClick={handleClear}
-                className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs cursor-pointer text-white"
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded-md cursor-pointer text-white flex items-center gap-1.5 transition-colors text-xs"
+                title="Clear All Features"
               >
-                Clear
+                <FaTrash size={12} />
+                <span>Clear</span>
               </button>
             </>
           )}
@@ -426,21 +429,30 @@ export default function MapComponent({
             longitude={feature.geometry.coordinates[0]}
             latitude={feature.geometry.coordinates[1]}
           >
-            <div
-              style={{
-                width: "15px",
-                height: "15px",
-                background: getSourceColor(
-                  feature.properties?._sourceId || "default",
-                  "point"
-                ),
-                border: "2px solid #1f2937",
-                borderRadius: "50%",
-                cursor: "pointer",
-                boxShadow: "0 0 0 2px rgba(255,255,255,0.15)",
-              }}
-              title={feature.properties?.name || "Point"}
-            />
+            <div className="relative group">
+              <div
+                style={{
+                  width: "15px",
+                  height: "15px",
+                  background: getSourceColor(
+                    feature.properties?._sourceId || "default",
+                    "point"
+                  ),
+                  border: "2px solid #1f2937",
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  boxShadow: "0 0 0 2px rgba(255,255,255,0.15)",
+                  transition: "transform 0.2s",
+                }}
+                className="hover:scale-125"
+                title={feature.properties?.name || "Point"}
+              />
+              {feature.properties?.name && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-1 bg-gray-900/90 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                  {feature.properties.name}
+                </div>
+              )}
+            </div>
           </Marker>
         ))}
       </Map>
