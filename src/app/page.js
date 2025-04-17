@@ -2,9 +2,9 @@
 
 import React, { useEffect } from "react";
 import Image from "next/image";
-import Frame from './components/home/frame'
-import Middle from './components/home/middle'
-import Integeration from './components/home/intigration'
+import Frame from "./components/home/frame";
+import Middle from "./components/home/middle";
+import Integeration from "./components/home/intigration";
 
 const StackingCards = () => {
   useEffect(() => {
@@ -83,17 +83,9 @@ const StackingCards = () => {
             ["--outline-width"]: "0px",
           }}
         >
-
-
-
-
-
-
-
-
           <li
-            key='1'
-            id={'1'}
+            key="1"
+            id={"1"}
             className="card sticky top-0 pt-[calc(var(--index)*var(--card-top-offset))]"
             style={{ ["--index"]: 1 }}
           >
@@ -109,12 +101,9 @@ const StackingCards = () => {
               </figure>
             </div>
           </li>
-
-
-
           <li
-            key='2'
-            id={'2'}
+            key="2"
+            id={"2"}
             className="card sticky top-0 pt-[calc(var(--index)*var(--card-top-offset))]"
             style={{ ["--index"]: 2 }}
           >
@@ -130,13 +119,9 @@ const StackingCards = () => {
               </figure>
             </div>
           </li>
-
-
-
-
           <li
-            key='3'
-            id={'3'}
+            key="3"
+            id={"3"}
             className="card sticky top-0 pt-[calc(var(--index)*var(--card-top-offset))]"
             style={{ ["--index"]: 3 }}
           >
@@ -152,15 +137,6 @@ const StackingCards = () => {
               </figure>
             </div>
           </li>
-
-
-
-
-
-
-
-
-
         </ul>
       </main>
 
