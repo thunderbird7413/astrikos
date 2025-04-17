@@ -73,6 +73,7 @@ export default function ThreeDPage() {
 
     loadPOIs();
   }, [currentModel]);
+  
   const handleUploadModel = async (file, name, category, tags) => {
     try {
       const formData = new FormData();
@@ -93,7 +94,6 @@ export default function ThreeDPage() {
       throw error;
     }
   };
-
 
   const handleSelectModel = (model) => {
     setCurrentModel(model);
@@ -187,8 +187,6 @@ export default function ThreeDPage() {
   const handleSaveScene = async () => {
     try {
       setIsLoading(true);
-      // In this implementation, changes are saved immediately
-      // This is just a notification
       alert('All changes have been saved automatically!');
     } finally {
       setIsLoading(false);
@@ -197,60 +195,106 @@ export default function ThreeDPage() {
 
   if (isLoading && !currentModel) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading Astrikos Platform...</h1>
-          <p>Please wait while we load your 3D models and data.</p>
+      <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+        <div className="text-center p-8 rounded-lg bg-gray-800 shadow-lg max-w-md">
+          <div className="mb-6">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+          <h1 className="text-2xl font-bold mb-4">Loading Astrikos Platform</h1>
+          <p className="text-gray-300">Preparing your 3D workspace and loading models...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900 flex flex-col h-screen bg-gray-50">
-      {/* <Toolbar
-        onSave={handleSaveScene}
-        pois={pois}
-        transformMode={transformMode}
-        onTransformModeChange={setTransformMode}
-        currentModel={currentModel}
-      /> */}
+    <div className="bg-gray-900 flex flex-col h-screen">
+      <header className="bg-gray-800 border-b border-gray-700 shadow-md">
+        <Toolbar
+          onSave={handleSaveScene}
+          pois={pois}
+          transformMode={transformMode}
+          onTransformModeChange={setTransformMode}
+          currentModel={currentModel}
+        />
+      </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          models={models}
-          categories={categories}
-          pois={pois}
-          onSelectPOI={setSelectedPOI}
-          selectedPOI={selectedPOI}
-          onModelUpload={handleUploadModel}
-          onModelSelect={handleSelectModel}
-          onAddCategory={handleAddCategory}
-          currentModel={currentModel}
-          isLoading={isLoading}
-        />
-
-        {currentModel ? (
-          <EditorScene
-            modelUrl={currentModel.path}
+        <aside className="border-r border-gray-700">
+          <Sidebar
+            models={models}
+            categories={categories}
             pois={pois}
-            onAddPOI={handleAddPOI}
-            onUpdatePOI={handleUpdatePOI}
-            onDeletePOI={handleDeletePOI}
-            transformMode={transformMode}
+            onSelectPOI={setSelectedPOI}
+            selectedPOI={selectedPOI}
+            onModelUpload={handleUploadModel}
+            onModelSelect={handleSelectModel}
+            onAddCategory={handleAddCategory}
+            currentModel={currentModel}
             isLoading={isLoading}
           />
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-100">
-            <div className="text-center p-6 max-w-md">
-              <h2 className="text-xl font-semibold mb-2">No Model Loaded</h2>
-              <p className="text-gray-600 mb-4">
-                Select a model from the library or upload a new one to start adding Points of Interest.
-              </p>
+        </aside>
+
+        <main className="flex-1 relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-10">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          
+          {currentModel ? (
+            <EditorScene
+              modelUrl={currentModel.path}
+              pois={pois}
+              onAddPOI={handleAddPOI}
+              onUpdatePOI={handleUpdatePOI}
+              onDeletePOI={handleDeletePOI}
+              transformMode={transformMode}
+              isLoading={isLoading}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-gray-800 text-white">
+              <div className="text-center p-8 max-w-md bg-gray-700 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-semibold mb-4">No Model Loaded</h2>
+                <p className="text-gray-300 mb-6">
+                  Select a model from the library or upload a new one to begin working with Points of Interest.
+                </p>
+                <button 
+                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  onClick={() => document.getElementById('model-upload-input')?.click()}
+                >
+                  Upload New Model
+                </button>
+                <input id="model-upload-input" type="file" className="hidden" />
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+      
+      {selectedPOI && (
+        <div className="bg-gray-800 border-t border-gray-700 p-4">
+          <div className="max-w-3xl mx-auto">
+            <h3 className="text-lg font-medium text-white mb-2">
+              Editing: {selectedPOI.title}
+            </h3>
+            <div className="flex space-x-2">
+              <button 
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                onClick={() => setSelectedPOI(null)}
+              >
+                Close
+              </button>
+              <button 
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                onClick={() => handleDeletePOI(selectedPOI._id)}
+              >
+                Delete POI
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

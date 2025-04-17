@@ -30,37 +30,37 @@ const POIForm = ({ initialData, onSave, onDelete, onCancel }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-gray-900 p-4 rounded-lg shadow-md">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Name</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
         <input
           type="text"
           name="name"
           value={formData.name}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Description</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500"
           rows={3}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Type</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
         <select
           name="type"
           value={formData.type}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-blue-500"
         >
           <option value="generic">Generic</option>
           <option value="entrance">Entrance</option>
@@ -72,35 +72,19 @@ const POIForm = ({ initialData, onSave, onDelete, onCancel }) => {
 
       {initialData?.position && (
         <div className="space-y-1">
-          <p className="text-sm font-medium text-gray-700">Position</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Position</p>
           <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-xs text-gray-500">X</label>
-              <input
-                type="number"
-                value={initialData.position.x.toFixed(2)}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500">Y</label>
-              <input
-                type="number"
-                value={initialData.position.y.toFixed(2)}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500">Z</label>
-              <input
-                type="number"
-                value={initialData.position.z.toFixed(2)}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
-              />
-            </div>
+            {['x', 'y', 'z'].map((axis) => (
+              <div key={axis}>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase">{axis}</label>
+                <input
+                  type="number"
+                  value={initialData.position[axis].toFixed(2)}
+                  readOnly
+                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-100"
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}

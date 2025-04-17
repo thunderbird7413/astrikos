@@ -57,7 +57,7 @@ const EditorScene = ({ modelUrl, pois, onAddPOI, onUpdatePOI, onDeletePOI }) => 
       />
 
       {isFormOpen && (
-        <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg z-10 w-64">
+        <div className="absolute top-4 right-4 bg-gray-800 p-2 rounded-lg shadow-lg z-10 w-64">
           {selectedPOI && !isEditing ? (
             <POIInfoModal
               poi={selectedPOI}

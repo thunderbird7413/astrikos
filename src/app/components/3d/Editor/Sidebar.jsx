@@ -132,65 +132,71 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
     }, []);
 
     return (
-        <div className="bg-gray-800 text-neutral w-64 h-full border-r border-gray-200 flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex gap-2">
-                <Button onClick={() => setShowUploadModal(true)} className="flex-1 flex items-center justify-center">
-                    <FiUpload className="mr-2" /> Upload Model
+        <div className="bg-gray-900 text-white w-72 h-full border-r border-gray-800 flex flex-col shadow-lg">
+            {/* Top Buttons */}
+            <div className="p-4 border-b border-gray-800 flex gap-2">
+                <Button onClick={() => setShowUploadModal(true)} className="flex-1 flex items-center justify-center bg-teal-600 hover:bg-teal-700 text-white">
+                    <FiUpload className="mr-2" /> Upload
                 </Button>
-                <Button 
-                    onClick={() => router.push('/create-model')} 
-                    className="flex items-center justify-center"
-                    variant="secondary"
+                <Button
+                    onClick={() => router.push('/create-model')}
+                    className="flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-white"
                 >
                     <FiPlus className="mr-2" /> Create
                 </Button>
             </div>
 
+            {/* Error Message */}
             {error && (
-                <div className="p-3 bg-red-50 text-red-600 flex items-start">
+                <div className="p-3 bg-red-900 text-red-200 flex items-start">
                     <FiAlertCircle className="mt-0.5 mr-2 flex-shrink-0" />
                     <div>
-                        <p className="font-medium">Error loading data</p>
+                        <p className="font-medium">Error</p>
                         <p className="text-sm">{error}</p>
-                        <button onClick={loadData} className="mt-2 text-sm text-red-700 underline">Retry</button>
+                        <button onClick={loadData} className="mt-2 text-sm underline hover:text-red-300">
+                            Retry
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* Loading Spinner */}
             {loading && (
-                <div className="p-4 flex items-center justify-center">
+                <div className="p-4 flex items-center justify-center text-gray-400">
                     <FiRefreshCw className="animate-spin mr-2" />
                     Loading models...
                 </div>
             )}
 
+            {/* Model List */}
             <div className="flex-1 overflow-y-auto p-2">
                 {models.length === 0 && !loading ? (
-                    <div className="text-center p-4 text-gray-500">No models found. Upload one to get started.</div>
+                    <div className="text-center p-4 text-gray-500">No models found.</div>
                 ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         {models.map((model) => {
-                            const categoryObj = categories.find(cat => cat._id === model.category);
+                            const categoryObj = categories.find((cat) => cat._id === model.category);
+                            const isSelected = currentModel?._id === model._id;
+
                             return (
                                 <div
                                     key={model._id}
-                                    className={`p-3 rounded cursor-pointer transition-colors font-medium flex justify-between items-start group ${
-                                        currentModel?._id === model._id
-                                            ? 'bg-[#2A9D8F] text-white border border-[#1F7F70]'
-                                            : 'hover:bg-[#3ACAB5] text-[#1F7F70]'
-                                    }`}
+                                    className={`p-3 rounded-lg cursor-pointer transition-all flex justify-between items-start group ${isSelected
+                                            ? 'bg-teal-700 border border-teal-500 text-white'
+                                            : 'bg-gray-800 hover:bg-teal-800 text-gray-200'
+                                        }`}
                                 >
                                     <div onClick={() => onModelSelect(model)} className="flex-1">
-                                        <h4 className="font-normal mb-1 text-lg truncate text-white">{model.name}</h4>
-                                        <div className="flex items-center mt-1">
-                                            <span className="text-xs bg-gray-900 rounded px-1.5 py-0.5 text-gray-300">
+                                        <h4 className="text-sm font-semibold mb-1 truncate">{model.name}</h4>
+                                        <div className="flex items-center text-xs text-gray-300">
+                                            <span className="bg-gray-700 px-2 py-0.5 rounded">
                                                 {categoryObj?.name || 'Uncategorized'}
                                             </span>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => handleDelete(model._id)}
-                                        className="ml-2 text-red-400 hover:text-red-600 transition"
+                                        className="ml-2 text-red-400 hover:text-red-600"
                                         title="Delete model"
                                     >
                                         <FiTrash2 />
@@ -202,43 +208,49 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
                 )}
             </div>
 
+            {/* Current Model Info */}
             {currentModel && (
-                <div className="p-3 border-t border-gray-700 bg-gray-900 text-white">
-                    <h3 className="font-semibold mb-1 text-lg">Current Model</h3>
-                    <p className="text-sm truncate">{currentModel.name}</p>
+                <div className="p-4 border-t border-gray-800 bg-gray-950 text-white">
+                    <h3 className="font-semibold text-md mb-1">Current Model</h3>
+                    <p className="text-sm truncate text-gray-300">{currentModel.name}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
-                        {(Array.isArray(currentModel?.tags) ? currentModel.tags : currentModel?.tags?.split(',') || []).map((tag) => (
-                            <span key={tag.trim()} className="text-xs bg-gray-800 rounded px-1.5 py-0.5 text-gray-300">
+                        {(Array.isArray(currentModel?.tags)
+                            ? currentModel.tags
+                            : currentModel?.tags?.split(',') || []
+                        ).map((tag) => (
+                            <span
+                                key={tag.trim()}
+                                className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-gray-400"
+                            >
                                 {tag.trim()}
                             </span>
                         ))}
                     </div>
                 </div>
             )}
-
             <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload 3D Model">
-                <div className="space-y-4">
+                <div className="space-y-4 text-white bg-gray-900 p-4 rounded-md">
                     <div>
-                        <label className="block text-sm font-medium mb-1">Model Name</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Model Name</label>
                         <input
                             type="text"
                             value={newModel.name}
                             onChange={(e) => setNewModel({ ...newModel, name: e.target.value })}
-                            className="w-full p-2 border rounded"
-                            placeholder="My 3D Model"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. My 3D Model"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Category</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Category</label>
                         <select
                             value={newModel.category}
                             onChange={(e) => setNewModel({ ...newModel, category: e.target.value })}
-                            className="w-full p-2 border rounded"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value="">Select category</option>
+                            <option value="" className="bg-gray-900 text-gray-300">Select category</option>
                             {categories.map((cat) => (
-                                <option key={cat._id} value={cat._id}>
+                                <option key={cat._id} value={cat._id} className="bg-gray-900 text-gray-200">
                                     {cat.name}
                                 </option>
                             ))}
@@ -246,27 +258,27 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Tags (comma separated)</label>
                         <input
                             type="text"
                             value={newModel.tags}
                             onChange={(e) => setNewModel({ ...newModel, tags: e.target.value })}
-                            className="w-full p-2 border rounded"
-                            placeholder="furniture, modern, wood"
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. furniture, modern, wood"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Model File</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Model File</label>
                         <input
                             type="file"
                             accept=".glb,.gltf"
                             onChange={(e) => setNewModel({ ...newModel, file: e.target.files[0] })}
-                            className="w-full"
+                            className="w-full text-sm text-gray-300 bg-gray-800 border border-gray-700 rounded-md p-2 file:bg-blue-600 file:border-none file:px-4 file:py-2 file:rounded file:text-white file:cursor-pointer hover:file:bg-blue-700"
                         />
                     </div>
 
-                    {error && <div className="text-red-500 text-sm">{error}</div>}
+                    {error && <div className="text-red-400 text-sm">{error}</div>}
 
                     <div className="flex justify-end space-x-2 pt-2">
                         <Button variant="secondary" onClick={() => setShowUploadModal(false)}>Cancel</Button>
@@ -274,6 +286,8 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
                     </div>
                 </div>
             </Modal>
+
         </div>
     );
+
 }
