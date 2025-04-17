@@ -137,7 +137,7 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
             {/* Header */}
             <div className="p-4 border-b border-gray-800 bg-gray-950">
                 <h1 className="text-xl font-semibold">3D Model Library</h1>
-                <p className="text-sm text-gray-400 mt-1">Select or upload a model</p>
+                <p className="text-xl text-gray-400 mt-1">Choose the Template</p>
             </div>
 
             
@@ -168,100 +168,137 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
                 </div>
             )}
 
-            {/* Model Grid */}
-            {!loading && (
-                <div className="flex-1 overflow-y-auto p-4">
-                    {models.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                            <p className="mb-4">No models found</p>
-                            <Button
-                                onClick={() => setShowUploadModal(true)}
-                                className="flex items-center bg-teal-600 hover:bg-teal-700"
-                            >
-                                <FiPlus className="mr-2" /> Upload First Model
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-4">
-                            {models.map((model) => {
-                                const categoryObj = categories.find((cat) => cat._id === model.category);
-                                const isSelected = currentModel?._id === model._id;
-                                const tags = Array.isArray(model.tags) ? model.tags : model.tags?.split(',') || [];
+           {/* Model Grid */}
+{!loading && (
+    <div className="flex-1 overflow-y-auto p-4">
+        {models.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <p className="mb-4">No models found</p>
+                <Button
+                    onClick={() => setShowUploadModal(true)}
+                    className="flex items-center bg-teal-600 hover:bg-teal-700"
+                >
+                    <FiPlus className="mr-2" /> Upload First Model
+                </Button>
+            </div>
+        ) : (
+            <div className="grid grid-cols-2 gap-4">
+                {models.map((model, index) => {
+                    const categoryObj = categories.find((cat) => cat._id === model.category);
+                    const isSelected = currentModel?._id === model._id;
+                    const tags = Array.isArray(model.tags) ? model.tags : model.tags?.split(',') || [];
 
-                                return (
-                                    <div
-                                        key={model._id}
-                                        onClick={() => onModelSelect(model)}
-                                        className={`relative group cursor-pointer transition-all duration-200 ${isSelected
-                                            ? 'ring-2 ring-teal-500'
-                                            : 'hover:ring-1 hover:ring-gray-600'
-                                            }`}
-                                    >
-                                        <div className={`bg-gray-800 rounded-lg overflow-hidden h-full ${isSelected ? 'bg-gray-750' : 'hover:bg-gray-750'}`}>
-                                            {/* Model Thumbnail Placeholder */}
-                                            <div className="h-32 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                                                <span className="text-4xl">🖼️</span>
-                                            </div>
+                    // Array of high-quality 3D/design-related placeholder images
+                    const thumbnailImages = [
+                        "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=300&h=200&fit=crop", // 3D abstract
+                        "https://images.unsplash.com/photo-1639762681297-068feec35a3a?w=300&h=200&fit=crop", // Blue tech
+                        "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=300&h=200&fit=crop", // Wireframe
+                        "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=300&h=200&fit=crop", // Architecture
+                        "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=300&h=200&fit=crop", // Product design
+                        "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=300&h=200&fit=crop"  // Abstract shapes
+                    ];
 
-                                            {/* Model Info */}
-                                            <div className="p-3">
-                                                <div className="flex justify-between items-start">
-                                                    <h3 className="font-medium text-sm truncate">{model.name}</h3>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(model._id);
-                                                        }}
-                                                        className="text-gray-400 hover:text-red-500 ml-2"
-                                                        title="Delete model"
-                                                    >
-                                                        <FiTrash2 size={14} />
-                                                    </button>
-                                                </div>
+                    // Select image based on model index (cycles through array)
+                    const thumbnailUrl = thumbnailImages[index % thumbnailImages.length];
 
-                                                {categoryObj && (
-                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-gray-900 text-xs rounded-full text-teal-400">
-                                                        {categoryObj.name}
-                                                    </span>
-                                                )}
+                    return (
+                        <div
+                            key={model._id}
+                            onClick={() => onModelSelect(model)}
+                            className={`relative group cursor-pointer transition-all duration-200 ${
+                                isSelected
+                                    ? 'ring-2 ring-teal-500'
+                                    : 'hover:ring-1 hover:ring-gray-600'
+                            }`}
+                        >
+                            <div className={`bg-gray-800 rounded-lg overflow-hidden h-full ${
+                                isSelected ? 'bg-gray-750' : 'hover:bg-gray-750'
+                            }`}>
+                                {/* Model Thumbnail - using image from array */}
+                                <div className="h-32 bg-gray-700 flex items-center justify-center overflow-hidden">
+                                    <img 
+                                        src={thumbnailUrl}
+                                        alt={`${model.name} thumbnail`}
+                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        onError={(e) => {
+                                            // Fallback to gradient background if image fails
+                                            e.target.style.display = 'none';
+                                            e.target.parentElement.className = 'h-32 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center';
+                                        }}
+                                    />
+                                </div>
 
-                                                {tags.length > 0 && (
-                                                    <div className="mt-2 flex flex-wrap gap-1">
-                                                        {tags.slice(0, 2).map((tag, index) => (
-                                                            <span
-                                                                key={index}
-                                                                className="text-xs bg-gray-900/50 text-gray-300 px-2 py-0.5 rounded-full"
-                                                            >
-                                                                {tag.trim()}
-                                                            </span>
-                                                        ))}
-                                                        {tags.length > 2 && (
-                                                            <span className="text-xs text-gray-500">+{tags.length - 2}</span>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Selected indicator */}
-                                            {isSelected && (
-                                                <div className="absolute top-2 right-2 bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full">
-                                                    Active
-                                                </div>
-                                            )}
+                                {/* Model Info */}
+                                <div className="p-3">
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-medium text-sm truncate">{model.name}</h3>
+                                        <div className="flex space-x-1">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // handleEdit(model._id);
+                                                }}
+                                                className="text-gray-400 hover:text-blue-500"
+                                                title="Edit model"
+                                            >
+                                                <FiEdit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(model._id);
+                                                }}
+                                                className="text-gray-400 hover:text-red-500"
+                                                title="Delete model"
+                                            >
+                                                <FiTrash2 size={14} />
+                                            </button>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            )}
 
+                                    {categoryObj && (
+                                        <span className="inline-block mt-1 px-2 py-0.5 bg-gray-900 text-xs rounded-full text-teal-400">
+                                            {categoryObj.name}
+                                        </span>
+                                    )}
+
+                                    {tags.length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-1">
+                                            {tags.slice(0, 2).map((tag, index) => (
+                                                <span
+                                                    key={index}
+                                                    className="text-xs bg-gray-900/50 text-gray-300 px-2 py-0.5 rounded-full"
+                                                >
+                                                    {tag.trim()}
+                                                </span>
+                                            ))}
+                                            {tags.length > 2 && (
+                                                <span className="text-xs text-gray-500">+{tags.length - 2}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Selected indicator */}
+                                {isSelected && (
+                                    <div className="absolute top-2 right-2 bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center">
+                                        <span className="h-2 w-2 bg-white rounded-full mr-1"></span>
+                                        Active
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        )}
+    </div>
+)}
             {/* Current Model Info */}
             {currentModel && (
                 <div className="p-4 border-t border-gray-800 bg-gray-950">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-sm">Current Model</h3>
+                        <h3 className="font-semibold text-xl">Current Model</h3>
                         <span className="text-xs bg-teal-900 text-teal-400 px-2 py-0.5 rounded-full">Active</span>
                     </div>
                     <p className="text-sm font-medium">{currentModel.name}</p>

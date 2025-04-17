@@ -155,56 +155,6 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
                     </div>
                 </div>
             )}
-
-            {/* Loading Spinner */}
-            {/* {loading && (
-                <div className="p-4 flex items-center justify-center text-gray-400">
-                    <FiRefreshCw className="animate-spin mr-2" />
-                    Loading models...
-                </div>
-            )} */}
-
-            {/* Model List */}
-            {/* <div className="flex-1 overflow-y-auto p-2">
-                {models.length === 0 && !loading ? (
-                    <div className="text-center p-4 text-gray-500">No models found.</div>
-                ) : (
-                    <div className="space-y-2">
-                        {models.map((model) => {
-                            const categoryObj = categories.find((cat) => cat._id === model.category);
-                            const isSelected = currentModel?._id === model._id;
-
-                            return (
-                                <div
-                                    key={model._id}
-                                    className={`p-3 rounded-lg cursor-pointer transition-all flex justify-between items-start group ${isSelected
-                                            ? 'bg-teal-700 border border-teal-500 text-white'
-                                            : 'bg-gray-800 hover:bg-teal-800 text-gray-200'
-                                        }`}
-                                >
-                                    <div onClick={() => onModelSelect(model)} className="flex-1">
-                                        <h4 className="text-sm font-semibold mb-1 truncate">{model.name}</h4>
-                                        <div className="flex items-center text-xs text-gray-300">
-                                            <span className="bg-gray-700 px-2 py-0.5 rounded">
-                                                {categoryObj?.name || 'Uncategorized'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(model._id)}
-                                        className="ml-2 text-red-400 hover:text-red-600"
-                                        title="Delete model"
-                                    >
-                                        <FiTrash2 />
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div> */}
-
-            {/* Current Model Info */}
             
             <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload 3D Model">
                 <div className="space-y-4 text-white bg-gray-900 p-4 rounded-md">
