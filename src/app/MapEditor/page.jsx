@@ -20,13 +20,11 @@ import { IoMdArrowBack } from "react-icons/io";
 import ProjectDialog from "../components/Map/ProjectDialog";
 
 export default function Home() {
-  // Project state
   const [projects, setProjects] = useState([]);
   const [activeProject, setActiveProject] = useState(null);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [forceReset, setForceReset] = useState(0);
 
-  // Original state
   const [dataSources, setDataSources] = useState([]);
   const [activeDataSources, setActiveDataSources] = useState({});
   const [realtimeData, setRealtimeData] = useState(null);
@@ -44,22 +42,18 @@ export default function Home() {
 
   const [socket, setSocket] = useState(null);
 
-  // Create a new project
   const createProject = (projectData) => {
     if (socket) {
       socket.emit("create-project", projectData);
     }
   };
 
-  // Load a project
   const loadProject = (projectId) => {
     if (socket) {
-      // Unsubscribe from all current sources first
       Object.keys(activeDataSources).forEach((sourceId) => {
         socket.emit("unsubscribe-source", { sourceId });
       });
 
-      // Clear all existing data sources and features before loading a new project
       setActiveDataSources({});
       setRealtimeData(null);
       setForceReset((prev) => prev + 1);
@@ -68,7 +62,6 @@ export default function Home() {
     }
   };
 
-  // Delete a project
   const deleteProject = (projectId) => {
     if (
       socket &&
@@ -77,7 +70,6 @@ export default function Home() {
       )
     ) {
       if (activeProject && activeProject.id === projectId) {
-        // Unsubscribe from all current sources first
         Object.keys(activeDataSources).forEach((sourceId) => {
           socket.emit("unsubscribe-source", { sourceId });
         });
@@ -94,7 +86,6 @@ export default function Home() {
     }
   };
 
-  // Update project with current map data
   const saveProjectState = () => {
     if (socket && activeProject) {
       const updatedProject = {
@@ -139,7 +130,6 @@ export default function Home() {
 
   const addNewSource = () => {
     if (socket && newSource.id && newSource.url && newSource.name) {
-      // Pass the current project ID if a project is active
       const sourceData = {
         ...newSource,
         projectId: activeProject ? activeProject.id : null,
@@ -155,7 +145,6 @@ export default function Home() {
     if (socket) {
       socket.emit("delete-source", { sourceId });
 
-      // If the source is active, unsubscribe from it
       if (activeDataSources[sourceId]) {
         unsubscribeFromSource(sourceId);
       }
@@ -166,6 +155,53 @@ export default function Home() {
     if (!feature || !feature.geometry) return;
 
     if (feature.geometry.type === "Point") {
+      const sourceId =
+        feature.properties?._sourceId || feature.properties?.sourceId;
+
+      if (sourceId && activeDataSources[sourceId]) {
+        const currentData = activeDataSources[sourceId];
+
+        let currentFeature = null;
+
+        if (currentData.type === "FeatureCollection" && currentData.features) {
+          const featureId = feature.id || feature.properties?.id;
+          const featureName = feature.properties?.name;
+
+          currentFeature = currentData.features.find(
+            (f) =>
+              (featureId &&
+                (f.id === featureId || f.properties?.id === featureId)) ||
+              (featureName && f.properties?.name === featureName)
+          );
+        } else if (currentData.type === "Feature") {
+          currentFeature = currentData;
+        } else if (currentData.longitude && currentData.latitude) {
+          currentFeature = {
+            geometry: {
+              type: "Point",
+              coordinates: [currentData.longitude, currentData.latitude],
+            },
+          };
+        }
+
+        if (currentFeature && currentFeature.geometry?.type === "Point") {
+          console.log(
+            "Focusing on real-time coordinates:",
+            currentFeature.geometry.coordinates
+          );
+          setViewState({
+            longitude: currentFeature.geometry.coordinates[0],
+            latitude: currentFeature.geometry.coordinates[1],
+            zoom: 14,
+          });
+          return;
+        }
+      }
+
+      console.log(
+        "Focusing on original coordinates:",
+        feature.geometry.coordinates
+      );
       setViewState({
         longitude: feature.geometry.coordinates[0],
         latitude: feature.geometry.coordinates[1],
@@ -202,10 +238,9 @@ export default function Home() {
     });
 
     newSocket.on("available-sources", (sources) => {
-      // Filter sources to only show those for the current project
       const filteredSources = activeProject
         ? sources.filter((source) => source.projectId === activeProject.id)
-        : sources.filter((source) => !source.projectId); // show only sources with no project
+        : sources.filter((source) => !source.projectId);
 
       setDataSources(filteredSources);
     });
@@ -215,30 +250,24 @@ export default function Home() {
     });
 
     newSocket.on("project-data", ({ project, dataSources }) => {
-      // Unsubscribe from all current sources first
       Object.keys(activeDataSources).forEach((sourceId) => {
         newSocket.emit("unsubscribe-source", { sourceId });
       });
 
-      // Clear previous state first
       setActiveDataSources({});
       setRealtimeData(null);
       setForceReset((prev) => prev + 1);
 
-      // Set new project data
       setActiveProject(project);
 
-      // Set the view state from the project
       if (project.initialViewState) {
         setViewState(project.initialViewState);
       }
 
-      // Update available data sources for this project
       setDataSources(dataSources);
     });
 
     newSocket.on("project-created", (project) => {
-      // Automatically load the newly created project
       setActiveProject(project);
     });
 
@@ -250,7 +279,6 @@ export default function Home() {
 
     newSocket.on("project-deleted", ({ id }) => {
       if (activeProject && activeProject.id === id) {
-        // Clear everything if the active project was deleted
         setActiveProject(null);
         setActiveDataSources({});
         setRealtimeData(null);
@@ -268,9 +296,7 @@ export default function Home() {
         return;
       }
 
-      // Update the active data sources atomically to prevent intermediate renders
       setActiveDataSources((prev) => {
-        // Only update if the source is different to avoid unnecessary renders
         if (prev[sourceId] === data) {
           return prev;
         }
@@ -297,7 +323,6 @@ export default function Home() {
     };
   }, [disconnectingSource, activeProject]);
 
-  // Auto-save project state when map changes
   useEffect(() => {
     const saveTimeout = setTimeout(() => {
       if (activeProject) {
@@ -308,10 +333,8 @@ export default function Home() {
     return () => clearTimeout(saveTimeout);
   }, [viewState, activeDataSources, activeProject]);
 
-  // Use a stable key for the FeaturePanel to avoid unnecessary remounts
   const featurePanelKey = `feature-panel-${activeProject?.id || "no-project"}`;
 
-  // Generate valid GeoJSON data from current active data sources
   const geojsonData =
     Object.keys(activeDataSources).length > 0
       ? generateGeoJSON(activeDataSources)
@@ -339,47 +362,43 @@ export default function Home() {
 
       {/* Header with navigation and controls */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-950 p-3 border-b border-gray-700 flex justify-between items-center shadow-md">
-        {/* Left side - Back button */}
-        <Link href="/">
-          <button className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-2 rounded-md transition-colors text-sm flex items-center gap-2 shadow-lg">
-            <IoMdArrowBack size={20} />
-          </button>
-        </Link>
-
-        {/* Right side - Title and controls */}
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-blue-400 flex items-center gap-2">
-            <FaMapMarkedAlt className="text-blue-300" />
-            GeoSpatial Map Editor
-          </h1>
+        {/* Left side - Back button and project selector */}
+        <div className="flex items-center gap-3">
+          <Link href="/">
+            <button className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-2 rounded-md transition-colors text-sm flex items-center gap-2 shadow-lg">
+              <IoMdArrowBack size={20} />
+            </button>
+          </Link>
 
           {/* Project selector dropdown */}
           <div className="relative">
-            <button
-              onClick={() => setProjectMenuOpen(!projectMenuOpen)}
-              className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm flex items-center gap-2 shadow-md"
-            >
-              <FaFolderOpen size={14} />
-              <span>
-                {activeProject ? activeProject.name : "Select Project"}
-              </span>
-            </button>
+            <div className="flex">
+              <button
+                onClick={() => setProjectMenuOpen(!projectMenuOpen)}
+                className="bg-gray-800 hover:bg-gray-700 text-white px-3 py-2 rounded-md transition-colors text-sm flex items-center gap-2"
+              >
+                <FaFolderOpen size={14} />
+                <span>
+                  {activeProject ? activeProject.name : "Select Project"}
+                </span>
+              </button>
+
+              <div className="px-2">
+                <button
+                  onClick={() => {
+                    setProjectDialogOpen(true);
+                    setProjectMenuOpen(false);
+                  }}
+                  className="w-full h-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm flex items-center gap-2"
+                >
+                  <FaPlus size={12} />
+                  <span>New Project</span>
+                </button>
+              </div>
+            </div>
 
             {projectMenuOpen && (
-              <div className="absolute top-full right-0 mt-1 w-64 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50">
-                <div className="p-2 border-b border-gray-700">
-                  <button
-                    onClick={() => {
-                      setProjectDialogOpen(true);
-                      setProjectMenuOpen(false);
-                    }}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm flex items-center gap-2"
-                  >
-                    <FaPlus size={12} />
-                    <span>New Project</span>
-                  </button>
-                </div>
-
+              <div className="absolute top-full left-0 mt-1 w-64 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50">
                 <div className="max-h-64 overflow-y-auto p-1">
                   {projects.length === 0 ? (
                     <div className="p-3 text-center text-gray-400">
@@ -421,21 +440,14 @@ export default function Home() {
               </div>
             )}
           </div>
+        </div>
 
-          {/* Add data source button */}
-          <button
-            onClick={() => setNewSourceDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors text-sm flex items-center gap-2 shadow-lg"
-            disabled={!activeProject}
-            title={
-              !activeProject
-                ? "Select a project first"
-                : "Add data source to project"
-            }
-          >
-            <FaPlus size={14} />
-            <span>Add Data Source</span>
-          </button>
+        {/* Right side - Title */}
+        <div className="flex items-center">
+          <h1 className="text-xl font-bold text-gray-300 flex items-center gap-2">
+            <FaMapMarkedAlt className="text-gray-300" />
+            GeoSpatial Map Editor
+          </h1>
         </div>
       </div>
 

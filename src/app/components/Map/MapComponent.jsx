@@ -34,63 +34,30 @@ export default function MapComponent({
 
       if (Array.isArray(geojsonData.features)) {
         validatedData.features = geojsonData.features.filter((feature) => {
-          if (!feature || !feature.geometry) return false;
-
-          if (feature.geometry.type === "Point") {
+          try {
             return (
-              Array.isArray(feature.geometry.coordinates) &&
-              feature.geometry.coordinates.length >= 2 &&
-              !isNaN(feature.geometry.coordinates[0]) &&
-              !isNaN(feature.geometry.coordinates[1])
+              feature &&
+              feature.geometry &&
+              feature.geometry.type &&
+              feature.geometry.coordinates &&
+              Array.isArray(feature.geometry.coordinates)
             );
+          } catch (e) {
+            console.error("Error validating feature:", e);
+            return false;
           }
-
-          if (feature.geometry.type === "LineString") {
-            return (
-              Array.isArray(feature.geometry.coordinates) &&
-              feature.geometry.coordinates.length >= 2 &&
-              feature.geometry.coordinates.every(
-                (coord) =>
-                  Array.isArray(coord) &&
-                  coord.length >= 2 &&
-                  !isNaN(coord[0]) &&
-                  !isNaN(coord[1])
-              )
-            );
-          }
-
-          if (feature.geometry.type === "Polygon") {
-            return (
-              Array.isArray(feature.geometry.coordinates) &&
-              feature.geometry.coordinates.length > 0 &&
-              feature.geometry.coordinates.every(
-                (ring) =>
-                  Array.isArray(ring) &&
-                  ring.length >= 4 &&
-                  ring.every(
-                    (coord) =>
-                      Array.isArray(coord) &&
-                      coord.length >= 2 &&
-                      !isNaN(coord[0]) &&
-                      !isNaN(coord[1])
-                  )
-              )
-            );
-          }
-
-          return true;
         });
       }
 
       return validatedData;
-    } catch (err) {
-      console.error("Error validating GeoJSON:", err);
+    } catch (error) {
+      console.error("Error validating GeoJSON:", error);
       return null;
     }
   }, [geojsonData]);
 
   const validPointFeatures = useMemo(() => {
-    if (!pointFeatures || !Array.isArray(pointFeatures)) return [];
+    if (!pointFeatures) return [];
 
     return pointFeatures.filter(
       (feature) =>
@@ -201,139 +168,89 @@ export default function MapComponent({
         console.error("Error setting up draw control:", err);
       }
     }
-  }, [isEditMode]);
+  }, [isEditMode, drawnFeatures]);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const geojson = JSON.parse(event.target.result);
-        setDrawnFeatures(geojson);
-
-        const mapInstance = mapRef.current?.getMap?.();
-        if (mapInstance && isEditMode) {
-          const existingControls = mapInstance._controls || [];
-          const drawControl = existingControls.find(
-            (control) => control instanceof MapboxDraw
-          );
-
-          if (drawControl) {
-            drawControl.deleteAll();
-            drawControl.add(geojson);
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const geojsonData = JSON.parse(e.target.result);
+          if (
+            geojsonData &&
+            geojsonData.type === "FeatureCollection" &&
+            Array.isArray(geojsonData.features)
+          ) {
+            setDrawnFeatures(geojsonData);
+            const drawControl = mapRef.current
+              ?.getMap()
+              .getStyle()
+              .sources.find((s) => s.id === "mapbox-gl-draw-cold");
+            if (drawControl) {
+              drawControl.add(geojsonData);
+            }
+          } else {
+            alert("Invalid GeoJSON file format");
           }
+        } catch (error) {
+          console.error("Error parsing GeoJSON file:", error);
+          alert("Error parsing GeoJSON file");
         }
-      } catch (err) {
-        alert("Invalid GeoJSON file!");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = null;
-  };
-
-  const handleDownload = () => {
-    const mapInstance = mapRef.current?.getMap?.();
-    if (!mapInstance) return;
-
-    try {
-      const existingControls = mapInstance._controls || [];
-      const drawControl = existingControls.find(
-        (control) => control instanceof MapboxDraw
-      );
-
-      if (drawControl) {
-        const data = drawControl.getAll();
-        const blob = new Blob([JSON.stringify(data)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "map-features.geojson";
-        a.click();
-
-        URL.revokeObjectURL(url);
-      } else if (drawnFeatures) {
-        const blob = new Blob([JSON.stringify(drawnFeatures)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "map-features.geojson";
-        a.click();
-
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      console.error("Error downloading features:", err);
+      };
+      reader.readAsText(file);
     }
   };
 
-  const handleClear = () => {
-    const mapInstance = mapRef.current?.getMap?.();
-    if (!mapInstance) return;
+  const handleDownload = () => {
+    if (!drawnFeatures) {
+      alert("No features to download");
+      return;
+    }
 
-    try {
-      const existingControls = mapInstance._controls || [];
-      const drawControl = existingControls.find(
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(drawnFeatures, null, 2));
+    const downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "map_features.geojson");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleClear = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to clear all drawn features? This cannot be undone."
+      )
+    ) {
+      const mapInstance = mapRef.current?.getMap?.();
+      if (!mapInstance) return;
+
+      const drawControl = mapInstance._controls.find(
         (control) => control instanceof MapboxDraw
       );
-
       if (drawControl) {
         drawControl.deleteAll();
-        setDrawnFeatures(null);
+        setDrawnFeatures({ type: "FeatureCollection", features: [] });
       }
-    } catch (err) {
-      console.error("Error clearing features:", err);
     }
   };
 
   const renderSafeLayer = (layer) => {
     if (
-      !validatedGeoJson ||
-      !validatedGeoJson.features ||
-      validatedGeoJson.features.length === 0
-    ) {
-      return null;
-    }
-
-    if (
-      layer.id.includes("line") &&
-      !validatedGeoJson.features.some(
-        (f) =>
-          f.geometry &&
-          (f.geometry.type === "LineString" ||
-            f.geometry.type === "MultiLineString")
-      )
-    ) {
-      return null;
-    }
-
-    if (
-      layer.id.includes("polygon") &&
-      !validatedGeoJson.features.some(
-        (f) =>
-          f.geometry &&
-          (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon")
-      )
-    ) {
-      return null;
-    }
-
-    if (
-      layer.id.includes("point") &&
-      !validatedGeoJson.features.some(
-        (f) => f.geometry && f.geometry.type === "Point"
-      )
+      !layer ||
+      !layer.id ||
+      !layer.type ||
+      (layer.type === "symbol" &&
+        (!layer.layout || !layer.layout["icon-image"])) ||
+      (layer.type !== "symbol" &&
+        (!layer.paint || Object.keys(layer.paint).length === 0))
     ) {
       return null;
     }
@@ -343,7 +260,6 @@ export default function MapComponent({
 
   return (
     <div className="w-3/5 relative">
-      {/* Edit Mode UI Controls */}
       <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
         <div className="flex flex-row items-center gap-1.5 bg-gray-900/70 px-1.5 py-1 rounded-lg shadow-lg border backdrop-blur-sm">
           <button
@@ -400,7 +316,6 @@ export default function MapComponent({
       >
         <NavigationControl position="top-left" />
 
-        {/* Display API GeoJSON data - always show non-point features */}
         {validatedGeoJson && (
           <Source
             id="geospatial-data"
@@ -417,12 +332,10 @@ export default function MapComponent({
             {renderSafeLayer(layerStyles.polygonOutline)}
             {renderSafeLayer(layerStyles.multiPolygonFill)}
             {renderSafeLayer(layerStyles.multiPolygonOutline)}
-            {/* Only show API points when not in edit mode, since they conflict with draw points */}
             {!isEditMode && renderSafeLayer(layerStyles.points)}
           </Source>
         )}
 
-        {/* Custom markers for point features - always show, even in edit mode */}
         {validPointFeatures.map((feature, index) => (
           <Marker
             key={`marker-${index}`}

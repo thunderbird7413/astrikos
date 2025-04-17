@@ -13,15 +13,11 @@ export default function FeaturePanel({
   dataSources,
   focusOnFeature,
 }) {
-  // Use local state to track and display features
   const [displayedSources, setDisplayedSources] = useState({});
 
-  // Use ref to store previous value for comparison
   const prevSourcesRef = useRef({});
 
-  // Update displayed sources only when activeDataSources actually changes
   useEffect(() => {
-    // Skip the update if activeDataSources is empty object to prevent unnecessary renders
     if (
       Object.keys(activeDataSources).length === 0 &&
       Object.keys(displayedSources).length === 0
@@ -29,11 +25,9 @@ export default function FeaturePanel({
       return;
     }
 
-    // Skip update if the data hasn't changed meaningfully
     const prevKeys = Object.keys(prevSourcesRef.current);
     const currentKeys = Object.keys(activeDataSources);
 
-    // If the source IDs are the same, we can avoid an update
     if (
       prevKeys.length === currentKeys.length &&
       prevKeys.every((key) => currentKeys.includes(key))
@@ -41,14 +35,11 @@ export default function FeaturePanel({
       return;
     }
 
-    // Update the ref with current value
     prevSourcesRef.current = activeDataSources;
 
-    // Reset local state when activeDataSources changes
     setDisplayedSources(activeDataSources);
   }, [activeDataSources]);
 
-  // Get feature type icon
   const getFeatureIcon = (geometryType) => {
     switch (geometryType) {
       case "Point":
@@ -104,36 +95,49 @@ export default function FeaturePanel({
                       data.type === "FeatureCollection" &&
                       data.features ? (
                         <div className="space-y-2">
-                          {data.features.map((feature, index) => (
-                            <div
-                              key={index}
-                              className="bg-gray-800 p-3 rounded-md border border-gray-700 hover:border-gray-600 transition-colors hover:shadow-md"
-                            >
-                              <div className="flex justify-between items-center">
-                                <h3 className="font-medium text-sm text-neutral-200 flex items-center gap-2">
-                                  {getFeatureIcon(feature.geometry?.type)}
-                                  {feature.properties?.name ||
-                                    `Feature #${index + 1}`}
-                                </h3>
-                                <button
-                                  onClick={() => focusOnFeature(feature)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-blue-100 text-xs py-1 px-3 rounded-md transition-colors flex items-center gap-1"
-                                >
-                                  <FaEye size={12} />
-                                  <span>Focus</span>
-                                </button>
-                              </div>
-                              <p className="text-xs text-neutral-400 mt-2 flex items-center gap-1">
-                                <span className="font-semibold">Type:</span>{" "}
-                                {feature.geometry?.type}
-                              </p>
-                              {feature.properties?.description && (
-                                <p className="text-xs mt-2 text-neutral-300 bg-gray-700/60 p-2 rounded-md">
-                                  {feature.properties.description}
+                          {data.features.map((feature, index) => {
+                            const featureWithSource = {
+                              ...feature,
+                              properties: {
+                                ...feature.properties,
+                                _sourceId: sourceId,
+                                sourceId: sourceId,
+                              },
+                            };
+
+                            return (
+                              <div
+                                key={index}
+                                className="bg-gray-800 p-3 rounded-md border border-gray-700 hover:border-gray-600 transition-colors hover:shadow-md"
+                              >
+                                <div className="flex justify-between items-center">
+                                  <h3 className="font-medium text-sm text-neutral-200 flex items-center gap-2">
+                                    {getFeatureIcon(feature.geometry?.type)}
+                                    {feature.properties?.name ||
+                                      `Feature #${index + 1}`}
+                                  </h3>
+                                  <button
+                                    onClick={() =>
+                                      focusOnFeature(featureWithSource)
+                                    }
+                                    className="bg-blue-600 hover:bg-blue-700 text-blue-100 text-xs py-1 px-3 rounded-md transition-colors flex items-center gap-1"
+                                  >
+                                    <FaEye size={12} />
+                                    <span>Focus</span>
+                                  </button>
+                                </div>
+                                <p className="text-xs text-neutral-400 mt-2 flex items-center gap-1">
+                                  <span className="font-semibold">Type:</span>{" "}
+                                  {feature.geometry?.type}
                                 </p>
-                              )}
-                            </div>
-                          ))}
+                                {feature.properties?.description && (
+                                  <p className="text-xs mt-2 text-neutral-300 bg-gray-700/60 p-2 rounded-md">
+                                    {feature.properties.description}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="bg-gray-800 p-3 rounded-md border border-gray-700 hover:border-gray-600 transition-colors">
@@ -143,7 +147,17 @@ export default function FeaturePanel({
                               {data?.properties?.name || "Single Feature"}
                             </h3>
                             <button
-                              onClick={() => focusOnFeature(data)}
+                              onClick={() => {
+                                const dataWithSource = {
+                                  ...data,
+                                  properties: {
+                                    ...data.properties,
+                                    _sourceId: sourceId,
+                                    sourceId: sourceId,
+                                  },
+                                };
+                                focusOnFeature(dataWithSource);
+                              }}
                               className="bg-blue-600 hover:bg-blue-700 text-blue-100 text-xs py-1 px-3 rounded-md transition-colors flex items-center gap-1"
                             >
                               <FaEye size={12} />
