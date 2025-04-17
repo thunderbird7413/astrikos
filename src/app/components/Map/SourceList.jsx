@@ -10,6 +10,12 @@ export default function SourceList({
 }) {
   return (
     <div className="w-1/5 border-r border-gray-800 flex flex-col bg-gray-950">
+       <button
+            onClick={() => setNewSourceDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors text-sm"
+          >
+            Add New Source
+          </button>
       <div className="p-3 border-b border-gray-700 bg-gray-950">
         <h2 className="text-sm uppercase tracking-wider text-neutral-400 font-semibold">
           Data Sources
