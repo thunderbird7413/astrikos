@@ -9,7 +9,6 @@ import MapComponent from "../components/Map/MapComponent";
 import FeaturePanel from "../components/Map/FeaturePanel";
 import { layerStyles, getSourceColor } from "../../utils/MapUtils";
 import { generateGeoJSON, getPointFeatures } from "../../utils/GeoJsonUtils";
-import { FiPlus, FiGlobe, FiLayers, FiDatabase, FiArrowRight } from 'react-icons/fi';
 
 export default function Home() {
   const [dataSources, setDataSources] = useState([]);
@@ -162,93 +161,47 @@ export default function Home() {
         onAddSource={addNewSource}
       />
 
-      <div className="bg-[#030915] p-4 border-b border-gray-700 flex justify-between items-center shadow-lg">
-        <div className="flex items-center space-x-3">
-          <FiGlobe className="text-blue-400 text-2xl" />
-          <h1 className="text-xl font-bold text-blue-100 tracking-wide">
-            GeoSpatial Data Viewer
-          </h1>
-        </div>
-        <div className="flex space-x-3">
+      <div className="bg-gray-950 p-2 border-b border-gray-700 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-neutral-200">
+          GeoSpatial Data Viewer
+        </h1>
+        <div className="flex space-x-2">
           <button
             onClick={() => setNewSourceDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-all duration-200 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded transition-colors text-sm"
           >
-            <FiPlus className="text-white" />
-            <span>Add New Source</span>
+            Add New Source
           </button>
-        </div>
-      </div>
-
-      {/* Status bar - connection indicator */}
-      <div className="bg-[#0a1023] px-4 py-1 flex items-center justify-between border-b border-gray-800">
-        <div className="flex items-center space-x-2 text-sm">
-          <div className="flex items-center">
-            <div className={`h-2 w-2 rounded-full mr-2 ${socket ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span className="text-gray-400">{socket ? 'Connected to server' : 'Disconnected'}</span>
-          </div>
-        </div>
-        <div className="text-xs text-gray-500">
-          {Object.keys(activeDataSources).length > 0 
-            ? `${Object.keys(activeDataSources).length} active source${Object.keys(activeDataSources).length > 1 ? 's' : ''}` 
-            : 'No active sources'}
         </div>
       </div>
 
       {/* Main two-panel layout */}
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Left panel - Data Sources */}
-        <div className="w-64 border-r border-gray-800 flex flex-col bg-[#050b1f] shadow-lg">
-          <div className="p-3 border-b border-gray-800 bg-[#071029] flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <FiDatabase className="text-blue-400" />
-              <h2 className="font-medium text-sm uppercase tracking-wider text-blue-200">Data Sources</h2>
-            </div>
-            <span className="bg-gray-700 px-2 py-0.5 rounded-full text-xs">{dataSources.length}</span>
-          </div>
-          <SourceList
-            dataSources={dataSources}
-            activeDataSources={activeDataSources}
-            disconnectingSource={disconnectingSource}
-            subscribeToSource={subscribeToSource}
-            unsubscribeFromSource={unsubscribeFromSource}
-            deleteSource={deleteSource}
-          />
-        </div>
+        <SourceList
+          dataSources={dataSources}
+          activeDataSources={activeDataSources}
+          disconnectingSource={disconnectingSource}
+          subscribeToSource={subscribeToSource}
+          unsubscribeFromSource={unsubscribeFromSource}
+          deleteSource={deleteSource}
+        />
 
         {/* Center panel - Map */}
-        <div className="flex-1 relative bg-[#040d20]">
-          {Object.keys(activeDataSources).length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#030915] bg-opacity-90">
-              <div className="text-center p-6 max-w-md">
-                <FiLayers className="mx-auto text-5xl text-blue-400 mb-4" />
-                <h3 className="text-xl font-medium text-blue-100 mb-2">No Active Data Sources</h3>
-                <p className="text-gray-400 mb-4">Subscribe to data sources from the left panel to visualize them on the map.</p>
-                <FiArrowRight className="mx-auto text-2xl text-blue-500 animate-pulse" />
-              </div>
-            </div>
-          )}
-          <MapComponent
-            viewState={viewState}
-            setViewState={setViewState}
-            geojsonData={geojsonData}
-            pointFeatures={pointFeatures}
-            layerStyles={layerStyles}
-          />
-        </div>
+        <MapComponent
+          viewState={viewState}
+          setViewState={setViewState}
+          geojsonData={geojsonData}
+          pointFeatures={pointFeatures}
+          layerStyles={layerStyles}
+        />
 
         {/* Right panel - Features */}
-        <div className="w-72 border-l border-gray-800 flex flex-col bg-[#050b1f] shadow-lg">
-          <div className="p-3 border-b border-gray-800 bg-[#071029] flex items-center space-x-2">
-            <FiLayers className="text-blue-400" />
-            <h2 className="font-medium text-sm uppercase tracking-wider text-blue-200">Features</h2>
-          </div>
-          <FeaturePanel
-            activeDataSources={activeDataSources}
-            dataSources={dataSources}
-            focusOnFeature={focusOnFeature}
-          />
-        </div>
+        <FeaturePanel
+          activeDataSources={activeDataSources}
+          dataSources={dataSources}
+          focusOnFeature={focusOnFeature}
+        />
       </div>
     </main>
   );
