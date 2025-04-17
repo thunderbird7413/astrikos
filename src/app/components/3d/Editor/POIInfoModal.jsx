@@ -3,7 +3,7 @@ import Button from '../UI/Button';
 
 const POIInfoModal = ({ poi, onClose, onEdit, onDelete }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 bg-gray-900">
       <h3 className="font-bold text-lg">{poi.name}</h3>
       <p className="text-gray-600">{poi.description || 'No description'}</p>
       
