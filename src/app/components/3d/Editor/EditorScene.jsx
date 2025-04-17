@@ -54,6 +54,7 @@ const EditorScene = ({ modelUrl, pois, onAddPOI, onUpdatePOI, onDeletePOI }) => 
         onModelClick={handleModelClick}
         onPOIClick={handlePOIClick}
         selectedPOI={selectedPOI}
+     
       />
 
       {isFormOpen && (

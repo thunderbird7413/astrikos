@@ -176,52 +176,6 @@ const ModelCreator = () => {
         }
     }, [transformMode]);
 
-    // Select object function
-    // const selectObject = (object) => {
-    //     // Skip grid and axes helpers
-    //     if (object.type === 'GridHelper' || object.type === 'AxesHelper') {
-    //         return;
-    //     }
-
-    //     if (selectedObjectRef.current) {
-    //         // Remove highlight from previously selected object
-    //         if (selectedObjectRef.current.material) {
-    //             selectedObjectRef.current.material.emissive.setHex(0x000000);
-    //         }
-    //     }
-
-    //     // Highlight new selection
-    //     selectedObjectRef.current = object;
-    //     if (object.material && object.material.emissive) {
-    //         object.material.emissive.setHex(0x555555);
-    //     }
-
-    //     // Update state for UI
-    //     setSelectedObject({
-    //         id: object.id,
-    //         position: {
-    //             x: object.position.x,
-    //             y: object.position.y,
-    //             z: object.position.z
-    //         },
-    //         rotation: {
-    //             x: object.rotation.x,
-    //             y: object.rotation.y,
-    //             z: object.rotation.z
-    //         },
-    //         scale: {
-    //             x: object.scale.x,
-    //             y: object.scale.y,
-    //             z: object.scale.z
-    //         },
-    //         color: object.material ? '#' + object.material.color.getHexString() : '#ffffff'
-    //     });
-
-    //     // Attach transform controls
-    //     transformControlsRef.current.attach(object);
-    //     setActivePanel('properties');
-    // };
-
     const selectObject = (object) => {
         // Skip if no object or it's a helper
         if (!object || object.type === 'GridHelper' || object.type === 'AxesHelper') {

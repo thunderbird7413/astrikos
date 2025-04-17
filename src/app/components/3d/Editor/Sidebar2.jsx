@@ -132,80 +132,152 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
     }, []);
 
     return (
-        <>
-        <div className="text-white w-[100%] bg-transparent border-r border-gray-900 flex flex-col ">
-            {/* Top Buttons */}
-            <div className="p-4 border-b  border-gray-900 flex justify-between">
-                <h1 className="text-xl">Visualize 3d Models</h1>
-                <Button onClick={() => setShowUploadModal(true)} className="flex items-center justify-center bg-teal-600 hover:bg-teal-700 text-white ">
-          <FiUpload className="mr-2" /> Upload
-        </Button>
+        <div className="bg-gray-900 text-white w-100 h-full border-r border-gray-800 flex flex-col shadow-lg overflow-hidden">
+
+            {/* Header */}
+            <div className="p-4 border-b border-gray-800 bg-gray-950">
+                <h1 className="text-xl font-semibold">3D Model Library</h1>
+                <p className="text-sm text-gray-400 mt-1">Select or upload a model</p>
             </div>
 
-            {/* Error Message */}
+            
+                {/* Error Message */ }
             {error && (
-                <div className="p-3 bg-red-900 text-red-200  flex items-start">
+                <div className="p-3 bg-red-900/80 text-red-200 flex items-start mx-4 mt-4 rounded-lg">
                     <FiAlertCircle className="mt-0.5 mr-2 flex-shrink-0" />
                     <div>
                         <p className="font-medium">Error</p>
                         <p className="text-sm">{error}</p>
-                        <button onClick={loadData} className="mt-2 text-sm underline hover:text-red-300">
-                            Retry
+                        <button
+                            onClick={loadData}
+                            className="mt-2 text-sm flex items-center text-blue-400 hover:text-blue-300"
+                        >
+                            <FiRefreshCw className="mr-1" /> Retry
                         </button>
                     </div>
                 </div>
             )}
 
             {/* Loading Spinner */}
-            {/* {loading && (
-                <div className="p-4 flex items-center justify-center text-gray-400">
-                    <FiRefreshCw className="animate-spin mr-2" />
-                    Loading models...
+            {loading && (
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="flex flex-col items-center text-gray-400">
+                        <FiRefreshCw className="animate-spin text-2xl mb-2" />
+                        <p>Loading models...</p>
+                    </div>
                 </div>
-            )} */}
+            )}
 
-            {/* Model List */}
-            {/* <div className="flex-1 overflow-y-auto p-2">
-                {models.length === 0 && !loading ? (
-                    <div className="text-center p-4 text-gray-500">No models found.</div>
-                ) : (
-                    <div className="space-y-2">
-                        {models.map((model) => {
-                            const categoryObj = categories.find((cat) => cat._id === model.category);
-                            const isSelected = currentModel?._id === model._id;
+            {/* Model Grid */}
+            {!loading && (
+                <div className="flex-1 overflow-y-auto p-4">
+                    {models.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                            <p className="mb-4">No models found</p>
+                            <Button
+                                onClick={() => setShowUploadModal(true)}
+                                className="flex items-center bg-teal-600 hover:bg-teal-700"
+                            >
+                                <FiPlus className="mr-2" /> Upload First Model
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                            {models.map((model) => {
+                                const categoryObj = categories.find((cat) => cat._id === model.category);
+                                const isSelected = currentModel?._id === model._id;
+                                const tags = Array.isArray(model.tags) ? model.tags : model.tags?.split(',') || [];
 
-                            return (
-                                <div
-                                    key={model._id}
-                                    className={`p-3 rounded-lg cursor-pointer transition-all flex justify-between items-start group ${isSelected
-                                            ? 'bg-teal-700 border border-teal-500 text-white'
-                                            : 'bg-gray-800 hover:bg-teal-800 text-gray-200'
-                                        }`}
-                                >
-                                    <div onClick={() => onModelSelect(model)} className="flex-1">
-                                        <h4 className="text-sm font-semibold mb-1 truncate">{model.name}</h4>
-                                        <div className="flex items-center text-xs text-gray-300">
-                                            <span className="bg-gray-700 px-2 py-0.5 rounded">
-                                                {categoryObj?.name || 'Uncategorized'}
-                                            </span>
+                                return (
+                                    <div
+                                        key={model._id}
+                                        onClick={() => onModelSelect(model)}
+                                        className={`relative group cursor-pointer transition-all duration-200 ${isSelected
+                                            ? 'ring-2 ring-teal-500'
+                                            : 'hover:ring-1 hover:ring-gray-600'
+                                            }`}
+                                    >
+                                        <div className={`bg-gray-800 rounded-lg overflow-hidden h-full ${isSelected ? 'bg-gray-750' : 'hover:bg-gray-750'}`}>
+                                            {/* Model Thumbnail Placeholder */}
+                                            <div className="h-32 bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                                                <span className="text-4xl">🖼️</span>
+                                            </div>
+
+                                            {/* Model Info */}
+                                            <div className="p-3">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-medium text-sm truncate">{model.name}</h3>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(model._id);
+                                                        }}
+                                                        className="text-gray-400 hover:text-red-500 ml-2"
+                                                        title="Delete model"
+                                                    >
+                                                        <FiTrash2 size={14} />
+                                                    </button>
+                                                </div>
+
+                                                {categoryObj && (
+                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-gray-900 text-xs rounded-full text-teal-400">
+                                                        {categoryObj.name}
+                                                    </span>
+                                                )}
+
+                                                {tags.length > 0 && (
+                                                    <div className="mt-2 flex flex-wrap gap-1">
+                                                        {tags.slice(0, 2).map((tag, index) => (
+                                                            <span
+                                                                key={index}
+                                                                className="text-xs bg-gray-900/50 text-gray-300 px-2 py-0.5 rounded-full"
+                                                            >
+                                                                {tag.trim()}
+                                                            </span>
+                                                        ))}
+                                                        {tags.length > 2 && (
+                                                            <span className="text-xs text-gray-500">+{tags.length - 2}</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Selected indicator */}
+                                            {isSelected && (
+                                                <div className="absolute top-2 right-2 bg-teal-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    Active
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleDelete(model._id)}
-                                        className="ml-2 text-red-400 hover:text-red-600"
-                                        title="Delete model"
-                                    >
-                                        <FiTrash2 />
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div> */}
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Current Model Info */}
-            
+            {currentModel && (
+                <div className="p-4 border-t border-gray-800 bg-gray-950">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-sm">Current Model</h3>
+                        <span className="text-xs bg-teal-900 text-teal-400 px-2 py-0.5 rounded-full">Active</span>
+                    </div>
+                    <p className="text-sm font-medium">{currentModel.name}</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                        {(Array.isArray(currentModel.tags) ? currentModel.tags : currentModel.tags?.split(',') || []).map((tag) => (
+                            <span
+                                key={tag.trim()}
+                                className="text-xs bg-gray-800 border border-gray-700 rounded-full px-2 py-0.5 text-gray-400"
+                            >
+                                {tag.trim()}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <Modal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload 3D Model">
                 <div className="space-y-4 text-white bg-gray-900 p-4 rounded-md">
                     <div>
@@ -266,28 +338,6 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
             </Modal>
 
         </div>
-        {/* <div className="bg-[green] opacity-25">
-        {currentModel && (
-            <div className="p-4 border-t border-gray-800 bg-[red] text-white w-[10%]">
-                <h3 className="font-semibold text-md mb-1">Current Model</h3>
-                <p className="text-sm truncate text-gray-300">{currentModel.name}</p>
-                <div className="flex flex-wrap gap-1 mt-2">
-                    {(Array.isArray(currentModel?.tags)
-                        ? currentModel.tags
-                        : currentModel?.tags?.split(',') || []
-                    ).map((tag) => (
-                        <span
-                            key={tag.trim()}
-                            className="text-xs bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-gray-400"
-                        >
-                            {tag.trim()}
-                        </span>
-                    ))}
-                </div>
-            </div>
-        )}
-        </div> */}
-        </>
     );
 
 }

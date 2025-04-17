@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from 'react';
-import Sidebar from '../components/3d/Editor/Sidebar';
+import Sidebar2 from '../components/3d/Editor/Sidebar2';
 import EditorScene from '../components/3d/Editor/EditorScene';
 import Toolbar from '../components/3d/Editor/Toolbar';
 
@@ -208,8 +208,16 @@ export default function ThreeDPage() {
 
   return (
     <div className="bg-gray-900 flex flex-col h-screen bg-gray-50">
-      <div className="flex flex-col">
-        <Sidebar
+      {/* <Toolbar
+        onSave={handleSaveScene}
+        pois={pois}
+        transformMode={transformMode}
+        onTransformModeChange={setTransformMode}
+        currentModel={currentModel}
+      /> */}
+
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar2
           models={models}
           categories={categories}
           pois={pois}
@@ -231,7 +239,6 @@ export default function ThreeDPage() {
             onDeletePOI={handleDeletePOI}
             transformMode={transformMode}
             isLoading={isLoading}
-            modelName={currentModel.name}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-100">
