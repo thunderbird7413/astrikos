@@ -23,10 +23,10 @@ const Content = [
   },
   {
     id: 3,
-    title: 'Visualize 2D model',
-    description: 'Visualize your 2D model with our easy to use visualization tool.',
+    title: 'Visualize 3D map',
+    description: 'Visualize your 3D map with our easy to use visualization tool.',
     icon: '/images/three9.png',
-    link: '/visualize-2d',
+    link: '/visualize-3d',
   },
   {
     id: 4,

@@ -31,6 +31,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "three": "^0.175.0",
+    "threebox-plugin": "^2.2.7",
     "uuid": "^11.1.0"
   },
   "devDependencies": {

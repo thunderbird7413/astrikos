@@ -7,7 +7,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: 'My App',
+  title: 'Astrikos',
 };
 
 
