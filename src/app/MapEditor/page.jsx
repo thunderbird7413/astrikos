@@ -151,7 +151,7 @@ export default function Home() {
   const pointFeatures = getPointFeatures(geojsonData);
 
   return (
-    <main className="h-screen flex flex-col bg-gray-950 text-neutral-200 overflow-hidden">
+    <main className="h-screen flex flex-col bg-[#030915] text-neutral-200 overflow-hidden">
       {/* New source dialog */}
       <SourceDialog
         isOpen={newSourceDialogOpen}
@@ -161,7 +161,7 @@ export default function Home() {
         onAddSource={addNewSource}
       />
 
-      <div className="bg-gray-950 p-2 border-b border-gray-700 flex justify-between items-center">
+      <div className="bg-[#030915] p-2 border-b border-gray-700 flex justify-between items-center">
         <h1 className="text-xl font-bold text-neutral-200">
           GeoSpatial Data Viewer
         </h1>

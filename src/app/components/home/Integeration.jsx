@@ -1,5 +1,5 @@
 import React from 'react';
-import './intigration.css';
+import './Integeration.css';
 
 function Integeration() {
   return (
@@ -15,7 +15,7 @@ function Integeration() {
       </div>
       <div className="integration-image-column">
         <img
-          src="/images/INT.avif"
+          src={'images/INT.avif'}
           alt="Integration Feature"
           className="integration-image"
         />
