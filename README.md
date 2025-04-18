@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+---
 
-First, run the development server:
+## Key Modules & Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Map & 3D Visualization
+- Upload and render GLTF/GLB models using Threebox + Three.js.
+- Overlay and manipulate GeoJSON data on Mapbox.
+- Metadata tooltips for POIs and structures.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### MapEditor Tools
+- Project creation and management stored in MongoDB.
+- Drawing and editing of spatial features (points, lines, polygons).
+- Real-time updates via WebSocket.
+- GeoJSON export functionality.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### UI/UX Enhancements
+- Responsive design with Tailwind CSS.
+- Smooth animations via Framer Motion.
+- Clean interface for tech and non-tech users.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Creator Mode
+- Build models using geometric primitives.
+- Add/edit metadata to objects.
+- Export finalized scenes.
+- (Optional) Authenticated access for creators.
 
-## Learn More
+### Project & Data Management
+- Project selector, deletion confirmation, auto-save.
+- Hierarchical view of features.
+- Interactive feature explorer for metadata.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Real-Time & Backend Integration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Real-Time Data Flow
+- Clients subscribe to WebSocket channels for project updates.
+- Changes broadcast instantly to all connected users.
+- No page reload required for sync.
 
-## Deploy on Vercel
+### Data Structure
+Each project includes:
+- Metadata (title, description)
+- View state and camera config
+- Linked 3D/GeoJSON assets
+- Persistent spatial features
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Use Cases
+
+| Sector              | Applications                                                  |
+|---------------------|---------------------------------------------------------------|
+| Urban Planning       | Zoning, infrastructure, land use analysis                    |
+| Environment          | Protected zone tracking, resource monitoring                 |
+| Transportation       | Traffic and transit analysis, route planning                 |
+| Emergency Response   | Disaster coordination, evacuation route visualization        |
+| Business             | Market mapping, delivery planning                            |
+| Academia & Research  | Spatial research platforms, collaborative data visualization |
+
+---
+
+## Challenges & Lessons Learned
+
+### Technical Challenges
+- Sparse documentation for Threebox.
+- Precision issues with 3D placement.
+- Interfacing multiple third-party libraries.
+
+### Non-Technical Insights
+- Modular architecture was key for scalability.
+- Importance of good version control, docs, and team coordination.
+- User feedback played a major role in UI/UX improvement.
+
+---
+
+## Future Scope & Improvements
+
+- **🔁 Drag-and-Drop Uploads** — more intuitive data input
+- **🗂 Layer Management Panel** — better asset visibility/control
+- **💾 Session Exporting** — save & share active scenes
+- **🧠 Gemini AI Assistant** — smart querying for POIs and interactions
+- **📊 Analytics Dashboard** — heatmaps, activity tracking
+- **🔐 Access Control** — role-based permissions
+- **🏙 Multi-Township View** — support multiple campus/city models
+
+---
+
+## 📎 Conclusion
+
+Astrikos fuses geospatial intelligence, real-time communication, and 3D visualization into a powerful, browser-based platform. It serves as a foundational tool for the future of **smart city dashboards**, **urban simulation**, and **collaborative spatial planning**.
+
+---
+
+> _“Bridging the gap between data, design, and decision-making through immersive 3D mapping.”_
+
