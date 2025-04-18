@@ -10,6 +10,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import { getSourceColor } from "../../../utils/MapUtils";
+import { FaEdit, FaDownload, FaUpload, FaTrash } from "react-icons/fa";
 
 export default function MapComponent({
   viewState,
@@ -33,64 +34,30 @@ export default function MapComponent({
 
       if (Array.isArray(geojsonData.features)) {
         validatedData.features = geojsonData.features.filter((feature) => {
-          
-          if (!feature || !feature.geometry) return false;
-
-          if (feature.geometry.type === "Point") {
+          try {
             return (
-              Array.isArray(feature.geometry.coordinates) &&
-              feature.geometry.coordinates.length >= 2 &&
-              !isNaN(feature.geometry.coordinates[0]) &&
-              !isNaN(feature.geometry.coordinates[1])
+              feature &&
+              feature.geometry &&
+              feature.geometry.type &&
+              feature.geometry.coordinates &&
+              Array.isArray(feature.geometry.coordinates)
             );
+          } catch (e) {
+            console.error("Error validating feature:", e);
+            return false;
           }
-
-          if (feature.geometry.type === "LineString") {
-            return (
-              Array.isArray(feature.geometry.coordinates) &&
-              feature.geometry.coordinates.length >= 2 &&
-              feature.geometry.coordinates.every(
-                (coord) =>
-                  Array.isArray(coord) &&
-                  coord.length >= 2 &&
-                  !isNaN(coord[0]) &&
-                  !isNaN(coord[1])
-              )
-            );
-          }
-
-          if (feature.geometry.type === "Polygon") {
-            return (
-              Array.isArray(feature.geometry.coordinates) &&
-              feature.geometry.coordinates.length > 0 &&
-              feature.geometry.coordinates.every(
-                (ring) =>
-                  Array.isArray(ring) &&
-                  ring.length >= 4 &&
-                  ring.every(
-                    (coord) =>
-                      Array.isArray(coord) &&
-                      coord.length >= 2 &&
-                      !isNaN(coord[0]) &&
-                      !isNaN(coord[1])
-                  )
-              )
-            );
-          }
-
-          return true;
         });
       }
 
       return validatedData;
-    } catch (err) {
-      console.error("Error validating GeoJSON:", err);
+    } catch (error) {
+      console.error("Error validating GeoJSON:", error);
       return null;
     }
   }, [geojsonData]);
 
   const validPointFeatures = useMemo(() => {
-    if (!pointFeatures || !Array.isArray(pointFeatures)) return [];
+    if (!pointFeatures) return [];
 
     return pointFeatures.filter(
       (feature) =>
@@ -201,139 +168,89 @@ export default function MapComponent({
         console.error("Error setting up draw control:", err);
       }
     }
-  }, [isEditMode]);
+  }, [isEditMode, drawnFeatures]);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const geojson = JSON.parse(event.target.result);
-        setDrawnFeatures(geojson);
-
-        const mapInstance = mapRef.current?.getMap?.();
-        if (mapInstance && isEditMode) {
-          const existingControls = mapInstance._controls || [];
-          const drawControl = existingControls.find(
-            (control) => control instanceof MapboxDraw
-          );
-
-          if (drawControl) {
-            drawControl.deleteAll();
-            drawControl.add(geojson);
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const geojsonData = JSON.parse(e.target.result);
+          if (
+            geojsonData &&
+            geojsonData.type === "FeatureCollection" &&
+            Array.isArray(geojsonData.features)
+          ) {
+            setDrawnFeatures(geojsonData);
+            const drawControl = mapRef.current
+              ?.getMap()
+              .getStyle()
+              .sources.find((s) => s.id === "mapbox-gl-draw-cold");
+            if (drawControl) {
+              drawControl.add(geojsonData);
+            }
+          } else {
+            alert("Invalid GeoJSON file format");
           }
+        } catch (error) {
+          console.error("Error parsing GeoJSON file:", error);
+          alert("Error parsing GeoJSON file");
         }
-      } catch (err) {
-        alert("Invalid GeoJSON file!");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = null;
-  };
-
-  const handleDownload = () => {
-    const mapInstance = mapRef.current?.getMap?.();
-    if (!mapInstance) return;
-
-    try {
-      const existingControls = mapInstance._controls || [];
-      const drawControl = existingControls.find(
-        (control) => control instanceof MapboxDraw
-      );
-
-      if (drawControl) {
-        const data = drawControl.getAll();
-        const blob = new Blob([JSON.stringify(data)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "map-features.geojson";
-        a.click();
-
-        URL.revokeObjectURL(url);
-      } else if (drawnFeatures) {
-        const blob = new Blob([JSON.stringify(drawnFeatures)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "map-features.geojson";
-        a.click();
-
-        URL.revokeObjectURL(url);
-      }
-    } catch (err) {
-      console.error("Error downloading features:", err);
+      };
+      reader.readAsText(file);
     }
   };
 
-  const handleClear = () => {
-    const mapInstance = mapRef.current?.getMap?.();
-    if (!mapInstance) return;
+  const handleDownload = () => {
+    if (!drawnFeatures) {
+      alert("No features to download");
+      return;
+    }
 
-    try {
-      const existingControls = mapInstance._controls || [];
-      const drawControl = existingControls.find(
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(drawnFeatures, null, 2));
+    const downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "map_features.geojson");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleClear = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to clear all drawn features? This cannot be undone."
+      )
+    ) {
+      const mapInstance = mapRef.current?.getMap?.();
+      if (!mapInstance) return;
+
+      const drawControl = mapInstance._controls.find(
         (control) => control instanceof MapboxDraw
       );
-
       if (drawControl) {
         drawControl.deleteAll();
-        setDrawnFeatures(null);
+        setDrawnFeatures({ type: "FeatureCollection", features: [] });
       }
-    } catch (err) {
-      console.error("Error clearing features:", err);
     }
   };
 
   const renderSafeLayer = (layer) => {
     if (
-      !validatedGeoJson ||
-      !validatedGeoJson.features ||
-      validatedGeoJson.features.length === 0
-    ) {
-      return null;
-    }
-
-    if (
-      layer.id.includes("line") &&
-      !validatedGeoJson.features.some(
-        (f) =>
-          f.geometry &&
-          (f.geometry.type === "LineString" ||
-            f.geometry.type === "MultiLineString")
-      )
-    ) {
-      return null;
-    }
-
-    if (
-      layer.id.includes("polygon") &&
-      !validatedGeoJson.features.some(
-        (f) =>
-          f.geometry &&
-          (f.geometry.type === "Polygon" || f.geometry.type === "MultiPolygon")
-      )
-    ) {
-      return null;
-    }
-
-    if (
-      layer.id.includes("point") &&
-      !validatedGeoJson.features.some(
-        (f) => f.geometry && f.geometry.type === "Point"
-      )
+      !layer ||
+      !layer.id ||
+      !layer.type ||
+      (layer.type === "symbol" &&
+        (!layer.layout || !layer.layout["icon-image"])) ||
+      (layer.type !== "symbol" &&
+        (!layer.paint || Object.keys(layer.paint).length === 0))
     ) {
       return null;
     }
@@ -343,24 +260,22 @@ export default function MapComponent({
 
   return (
     <div className="w-3/5 relative">
-      {/* Edit Mode UI Controls - Now centered at top */}
       <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="flex flex-row items-center gap-2 bg-gray-900/80 px-3 py-1.5 rounded-md shadow-lg">
+        <div className="flex flex-row items-center gap-1.5 bg-gray-900/70 px-1.5 py-1 rounded-lg shadow-lg border backdrop-blur-sm">
           <button
             onClick={toggleEditMode}
-            className={`px-3 py-1 text-xs rounded cursor-pointer transition-colors ${
-              isEditMode
-                ? "bg-gray-600 text-gray-200"
-                : "bg-gray-600 text-gray-200"
-            }`}
+            className={`px-2 py-1 rounded-md cursor-pointer flex items-center gap-1.5 transition-colors text-xs bg-gray-700 text-gray-100 hover:bg-gray-600`}
+            title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
           >
-            {isEditMode ? "Exit Edit" : "Edit GeoJSON"}
+            <FaEdit size={12} />
+            <span>{isEditMode ? "Exit" : "Edit"}</span>
           </button>
 
           {isEditMode && (
             <>
-              <label className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs text-center cursor-pointer text-white">
-                Upload
+              <label className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded-md cursor-pointer text-white flex items-center gap-1.5 transition-colors text-xs">
+                <FaUpload size={12} />
+                <span>Upload</span>
                 <input
                   type="file"
                   accept=".geojson,application/geo+json"
@@ -371,16 +286,20 @@ export default function MapComponent({
 
               <button
                 onClick={handleDownload}
-                className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs cursor-pointer text-white"
+                className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded-md cursor-pointer text-white flex items-center gap-1.5 transition-colors text-xs"
+                title="Download GeoJSON"
               >
-                Download
+                <FaDownload size={12} />
+                <span>Download</span>
               </button>
 
               <button
                 onClick={handleClear}
-                className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs cursor-pointer text-white"
+                className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded-md cursor-pointer text-white flex items-center gap-1.5 transition-colors text-xs"
+                title="Clear All Features"
               >
-                Clear
+                <FaTrash size={12} />
+                <span>Clear</span>
               </button>
             </>
           )}
@@ -397,7 +316,6 @@ export default function MapComponent({
       >
         <NavigationControl position="top-left" />
 
-        {/* Display API GeoJSON data - always show non-point features */}
         {validatedGeoJson && (
           <Source
             id="geospatial-data"
@@ -414,33 +332,40 @@ export default function MapComponent({
             {renderSafeLayer(layerStyles.polygonOutline)}
             {renderSafeLayer(layerStyles.multiPolygonFill)}
             {renderSafeLayer(layerStyles.multiPolygonOutline)}
-            {/* Only show API points when not in edit mode, since they conflict with draw points */}
             {!isEditMode && renderSafeLayer(layerStyles.points)}
           </Source>
         )}
 
-        {/* Custom markers for point features - always show, even in edit mode */}
         {validPointFeatures.map((feature, index) => (
           <Marker
             key={`marker-${index}`}
             longitude={feature.geometry.coordinates[0]}
             latitude={feature.geometry.coordinates[1]}
           >
-            <div
-              style={{
-                width: "15px",
-                height: "15px",
-                background: getSourceColor(
-                  feature.properties?._sourceId || "default",
-                  "point"
-                ),
-                border: "2px solid #1f2937",
-                borderRadius: "50%",
-                cursor: "pointer",
-                boxShadow: "0 0 0 2px rgba(255,255,255,0.15)",
-              }}
-              title={feature.properties?.name || "Point"}
-            />
+            <div className="relative group">
+              <div
+                style={{
+                  width: "15px",
+                  height: "15px",
+                  background: getSourceColor(
+                    feature.properties?._sourceId || "default",
+                    "point"
+                  ),
+                  border: "2px solid #1f2937",
+                  borderRadius: "50%",
+                  cursor: "pointer",
+                  boxShadow: "0 0 0 2px rgba(255,255,255,0.15)",
+                  transition: "transform 0.2s",
+                }}
+                className="hover:scale-125"
+                title={feature.properties?.name || "Point"}
+              />
+              {feature.properties?.name && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 -translate-y-1 bg-gray-900/90 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                  {feature.properties.name}
+                </div>
+              )}
+            </div>
           </Marker>
         ))}
       </Map>

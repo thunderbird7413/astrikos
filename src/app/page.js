@@ -110,10 +110,10 @@ const StackingCards = () => {
             className="card z-10 sticky top-0 pt-[calc(var(--index)*var(--card-top-offset))]"
             style={{ ["--index"]: 1 }}
           >
-            <div className="card__content shadow-md  overflow-hidden ">
+            <div className="card__content shadow-md  overflow-hidden " style={{borderRadius :"10px"}}>
               <figure className="overflow-hidden">
                 <Image
-                  src={`/images/3d_img.jpeg`}
+                  src={`/images/image.png`}
                   alt={`Image for Card 1`}
                   width={1000}
                   height={600}
@@ -131,10 +131,10 @@ const StackingCards = () => {
             className="card z-10 sticky top-0 pt-[calc(var(--index)*var(--card-top-offset))]"
             style={{ ["--index"]: 2 }}
           >
-            <div className="card__content shadow-md  overflow-hidden ">
+            <div className="card__content shadow-md  overflow-hidden" style={{borderRadius :"10px"}}>
               <figure className="overflow-hidden">
                 <Image
-                  src={`/images/3d_img.jpeg`}
+                  src={`/images/image2.png`}
                   alt={`Image for Card 2`}
                   width={1000}
                   height={600}
