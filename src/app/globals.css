@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+/* In your global CSS file (styles/globals.css) */
+#__next .nextjs-logo {
+  display: none !important;
+}

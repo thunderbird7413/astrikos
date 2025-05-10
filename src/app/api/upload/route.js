@@ -29,13 +29,6 @@ export async function POST(request) {
   const filename = `${Date.now()}-${file.name}`;
   const filePath = path.join(uploadDir, filename);
   fs.writeFileSync(filePath, buffer);
-  console.log({
-    name,
-    filename,
-    path: `/models/${filename}`,
-    category,
-    tags: tags.map(tag => tag.trim()).filter(tag => tag)
-  });
   const model = await Model.create({
     name,
     filename,
@@ -43,8 +36,5 @@ export async function POST(request) {
     category,
     tags: tags.map(tag => tag.trim()).filter(tag => tag)
   });
-  console.log("created the new model")
-  console.log("created model", model)
-
   return NextResponse.json(model, { status: 201 });
 }

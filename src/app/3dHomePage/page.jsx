@@ -207,14 +207,14 @@ export default function ThreeDPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Toolbar
+    <div className="bg-gray-900 flex flex-col h-screen bg-gray-50">
+      {/* <Toolbar
         onSave={handleSaveScene}
         pois={pois}
         transformMode={transformMode}
         onTransformModeChange={setTransformMode}
         currentModel={currentModel}
-      />
+      /> */}
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

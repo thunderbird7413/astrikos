@@ -1,10 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FiUpload, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
+import { FiUpload, FiRefreshCw, FiAlertCircle, FiTrash2, FiPlus } from 'react-icons/fi';
 import Modal from '../UI/Modal';
 import Button from '../UI/Button';
+import { useRouter } from 'next/navigation';
 
 export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) {
+    const router = useRouter();
     const [models, setModels] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,7 +34,6 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
         let data = await res.json();
 
         if (data.length === 0) {
-            // Seed default categories if empty
             await Promise.all(
                 defaultCategories.map(cat =>
                     fetch('/api/categories', {
@@ -65,7 +66,6 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
             const modelsData = await modelsRes.json();
             setModels(modelsData);
             setCategories(categoriesData);
-
         } catch (err) {
             console.error('Load error:', err);
             setError(err.message);
@@ -76,8 +76,6 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
 
     const handleUpload = async () => {
         try {
-            console.log("uplaoding file");
-            console.log("newModel", newModel);
             if (!newModel.file || !newModel.name || !newModel.category) {
                 throw new Error('Name, file and category are required');
             }
@@ -87,12 +85,11 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
             formData.append('name', newModel.name);
             formData.append('category', newModel.category);
             formData.append('tags', newModel.tags);
-            
+
             const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
             });
-            console.log("response", response);
 
             if (!response.ok) throw new Error('Upload failed');
 
@@ -109,15 +106,43 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
         }
     };
 
+    const handleDelete = async (modelId) => {
+        try {
+            const confirmed = window.confirm("Are you sure you want to delete this model?");
+            if (!confirmed) return;
+
+            const res = await fetch(`/api/models/${modelId}`, {
+                method: 'DELETE',
+            });
+
+            if (!res.ok) throw new Error("Failed to delete model");
+            alert("Model Deleted Successfully...");
+            setModels(models.filter((m) => m._id !== modelId));
+            if (currentModel && currentModel._id === modelId) {
+                onModelSelect(null);
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+            setError(err.message);
+        }
+    };
+
     useEffect(() => {
         loadData();
     }, []);
 
     return (
-        <div className="w-64 h-full bg-gray-50 border-r border-gray-200 flex flex-col">
-            <div className="p-4 border-b border-gray-200">
-                <Button onClick={() => setShowUploadModal(true)} className="w-full flex items-center justify-center">
+        <div className="bg-gray-800 text-neutral w-64 h-full border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200 flex gap-2">
+                <Button onClick={() => setShowUploadModal(true)} className="flex-1 flex items-center justify-center">
                     <FiUpload className="mr-2" /> Upload Model
+                </Button>
+                <Button 
+                    onClick={() => router.push('/create-model')} 
+                    className="flex items-center justify-center"
+                    variant="secondary"
+                >
+                    <FiPlus className="mr-2" /> Create
                 </Button>
             </div>
 
@@ -149,18 +174,27 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
                             return (
                                 <div
                                     key={model._id}
-                                    onClick={() => onModelSelect(model)}
-                                    className={`p-3 rounded cursor-pointer transition-colors ${currentModel?._id === model._id
-                                            ? 'bg-blue-100 border border-blue-200'
-                                            : 'hover:bg-gray-100'
-                                        }`}
+                                    className={`p-3 rounded cursor-pointer transition-colors font-medium flex justify-between items-start group ${
+                                        currentModel?._id === model._id
+                                            ? 'bg-[#2A9D8F] text-white border border-[#1F7F70]'
+                                            : 'hover:bg-[#3ACAB5] text-[#1F7F70]'
+                                    }`}
                                 >
-                                    <h4 className="font-medium truncate">{model.name}</h4>
-                                    <div className="flex items-center mt-1">
-                                        <span className="text-xs bg-gray-200 rounded px-1.5 py-0.5">
-                                            {categoryObj?.name || 'Uncategorized'}
-                                        </span>
+                                    <div onClick={() => onModelSelect(model)} className="flex-1">
+                                        <h4 className="font-normal mb-1 text-lg truncate text-white">{model.name}</h4>
+                                        <div className="flex items-center mt-1">
+                                            <span className="text-xs bg-gray-900 rounded px-1.5 py-0.5 text-gray-300">
+                                                {categoryObj?.name || 'Uncategorized'}
+                                            </span>
+                                        </div>
                                     </div>
+                                    <button
+                                        onClick={() => handleDelete(model._id)}
+                                        className="ml-2 text-red-400 hover:text-red-600 transition"
+                                        title="Delete model"
+                                    >
+                                        <FiTrash2 />
+                                    </button>
                                 </div>
                             );
                         })}
@@ -169,17 +203,16 @@ export default function Sidebar({ currentModel, onModelSelect, onModelUpload }) 
             </div>
 
             {currentModel && (
-                <div className="p-3 border-t border-gray-200 bg-white">
-                    <h3 className="font-medium mb-1">Current Model</h3>
+                <div className="p-3 border-t border-gray-700 bg-gray-900 text-white">
+                    <h3 className="font-semibold mb-1 text-lg">Current Model</h3>
                     <p className="text-sm truncate">{currentModel.name}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                         {(Array.isArray(currentModel?.tags) ? currentModel.tags : currentModel?.tags?.split(',') || []).map((tag) => (
-                            <span key={tag.trim()} className="text-xs bg-gray-100 rounded px-1.5 py-0.5">
+                            <span key={tag.trim()} className="text-xs bg-gray-800 rounded px-1.5 py-0.5 text-gray-300">
                                 {tag.trim()}
                             </span>
                         ))}
                     </div>
-
                 </div>
             )}
 
